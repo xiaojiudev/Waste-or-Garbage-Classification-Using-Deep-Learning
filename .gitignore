@@ -3,5 +3,6 @@
 *.jpeg
 .idea/
 *.h5
+*.keras
 ~$doc.docx
 ~WRL1698.tmp
