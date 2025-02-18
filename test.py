@@ -27,12 +27,10 @@ if gpus:
 
 logical_gpus = tf.config.list_logical_devices('GPU')
 print(len(gpus), "Physical GPU,", len(logical_gpus), "Logical GPUs")
-# mixed_precision.set_global_policy('mixed_float16')
-# tf.keras.backend.clear_session()
 
 # Thiết lập đường dẫn
-train_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/train'
-test_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/test'
+train_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/train'
+test_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/test'
 
 # Data Augmentation
 train_datagen = ImageDataGenerator(
@@ -65,7 +63,9 @@ testing_data = test_datagen.flow_from_directory(
     test_path,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical')
+    class_mode='categorical',
+    shuffle=False # NOTE: Đảm bảo thứ tự dữ liệu test không bị xáo trộn, giúp đánh giá metrics chính xác
+)
 
 # Kiểm tra tỷ lệ số lượng mẫu của từng lớp:
 from collections import Counter
@@ -103,18 +103,40 @@ plt.show()
 #  include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
 BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights='imagenet', include_top=False)
 
-# NOTE: Bật fine-tuning trên ResNet50
+# NOTE: Fine-tuning - Cho phép huấn luyện lại các lớp cuối của ResNet50
 #  Là quá trình tiếp tục huấn luyện một mô hình đã được huấn luyện trước bằng cách điều chỉnh một số lớp cụ thể thay vì huấn luyện từ đầu.
 #  Cách làm này giúp mô hình học thêm các đặc trưng cụ thể của dữ liệu mới mà không làm mất đi kiến thức tổng quát từ ImageNet.
 #  Nếu ta không fine-tune, mô hình chỉ sử dụng các đặc trưng có sẵn của ResNet50 mà không điều chỉnh cho bài toán cụ thể.
-for layer in BASE_MODEL.layers[-100:]:  # NOTE: Fine-tune 50 lớp cuối - 50 lớp cuối cùng của ResNet50 sẽ tiếp tục được huấn luyện trên dữ liệu mới thay vì giữ nguyên trọng số cũ.
+#  layer.trainable = False - trọng số của lớp này sẽ không thay đổi trong quá trình huấn luyện
+#  layer.trainable = True - trọng số của lớp này sẽ được huấn luyện và cập nhật trọng số bình thường
+for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
     layer.trainable = True
 
+# NOTE: Thêm các lớp mới vào mô hình
+x = BASE_MODEL.output
+
+# NOTE: Lớp Conv2D, MaxPooling2D, BatchNormalization thêm vào sau ResNet50
+x = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+x = layers.BatchNormalization()(x)
+x = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+x = layers.BatchNormalization()(x)
+
 # NOTE: Thêm các lớp Fully Connected
-x = layers.Flatten()(BASE_MODEL.output) # NOTE: Chuyển đầu ra từ ResNet50 thành một vector 1 chiều.
-x = layers.Dense(512, activation='relu')(x) #  NOTE: Một lớp FC với 512 neuron và hàm kích hoạt ReLU.
-x = layers.Dropout(0.3)(x) # NOTE: Bỏ ngẫu nhiên 50% neuron trong quá trình huấn luyện để tránh overfitting.
-prediction = layers.Dense(7, activation='softmax')(x) # NOTE: Lớp đầu ra có 7 neuron (tương ứng với 7 lớp phân loại) và sử dụng hàm kích hoạt softmax.
+#  Dropout - Bỏ ngẫu nhiên 50% neuron trong quá trình huấn luyện để tránh overfitting.
+#  Dense(512, activation='relu') - Một lớp FC với 512 neuron và hàm kích hoạt ReLU.
+x = layers.Flatten()(x) # NOTE: Chuyển đầu ra từ ResNet50 thành một vector 1 chiều.
+x = layers.Dense(512, activation='relu')(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dense(256, activation='relu')(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dense(128, activation='relu')(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dropout(0.5)(x)
+
+# NOTE: Lớp đầu ra phân loại (5 lớp)
+prediction = layers.Dense(5, activation='softmax')(x)
 
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
 MODEL_RESNET50.summary()
@@ -127,7 +149,7 @@ MODEL_RESNET50.summary()
 #  Mục đích của compile: Giúp mô hình sẵn sàng để huấn luyện bằng cách xác định cách nó sẽ học và tối ưu trọng số.
 # model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 MODEL_RESNET50.compile(
-    optimizer=tf.keras.optimizers.SGD(learning_rate=1e-5, momentum=0.9),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
     loss='categorical_crossentropy',
     metrics=['accuracy'])
 
@@ -135,7 +157,7 @@ MODEL_RESNET50.compile(
 #  Mục đích giúp tối ưu hiệu suất mô hình,tránh overfitting, cải thiện tốc độ hội tụ bằng cách điều chỉnh learning rate.
 #  ModelCheckpoint - Lưu mô hình tốt nhất dựa trên val_loss
 checkpoint = ModelCheckpoint(
-    filepath='resnet50_best.h5',
+    filepath='resnet50_best.keras',
     verbose=False,
     save_best_only=True,
     monitor='val_loss',
@@ -166,7 +188,7 @@ class_weights_dict = dict(enumerate(class_weights))
 history = MODEL_RESNET50.fit(
     training_data,
     steps_per_epoch=len(training_data),
-    epochs=20,
+    epochs=15,
     validation_data=testing_data,
     validation_steps=len(testing_data),
     class_weight=class_weights_dict,
