@@ -1,11 +1,11 @@
-import os
-import cv2
-import numpy as np
+import json
+
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
-from tensorflow.keras.callbacks import ReduceLROnPlateau
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 keras = tf.keras
 layers = tf.keras.layers
@@ -15,7 +15,6 @@ ImageDataGenerator = tf.keras.preprocessing.image.ImageDataGenerator
 ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
 EarlyStopping = tf.keras.callbacks.EarlyStopping
 
-from tensorflow.keras import mixed_precision
 print("GPU available:", tf.config.list_physical_devices('GPU'))
 print("TensorFlow is using GPU:", tf.test.is_built_with_cuda())
 gpus = tf.config.list_physical_devices('GPU')
@@ -42,7 +41,8 @@ train_datagen = ImageDataGenerator(
     zoom_range=0.2, # Phóng to hình ảnh 20%
     horizontal_flip=True, # Lật ngang hình ảnh, giống như dối xứng qua gương
     # brightness_range=[0.5, 1.5], # NOTE: không xài cái này, làm ảnh gốc và ảnh augmentation khác nhau rất lớn
-    fill_mode='nearest' # Điền vào các pixel bị thiếu
+    fill_mode='nearest', # Điền vào các pixel bị thiếu
+    validation_split=0.2 # Tách 20% làm validation
 )
 
 # Chỉ áp dụng augmentation cho tập train, tập test CHỈ rescale. Nếu không sẽ gây nhiễu dữ liệu và làm sai lệch kết quả đánh giá.
@@ -57,7 +57,19 @@ training_data = train_datagen.flow_from_directory(
     train_path,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical')
+    class_mode='categorical',
+    shuffle=True,
+    subset='training',
+)
+
+# Tạo validation data (20%)
+validation_data = train_datagen.flow_from_directory(
+    train_path,
+    target_size=(224, 224),
+    batch_size=32,
+    class_mode='categorical',
+    subset='validation'  # Phần dành cho validation
+)
 
 testing_data = test_datagen.flow_from_directory(
     test_path,
@@ -66,6 +78,10 @@ testing_data = test_datagen.flow_from_directory(
     class_mode='categorical',
     shuffle=False # NOTE: Đảm bảo thứ tự dữ liệu test không bị xáo trộn, giúp đánh giá metrics chính xác
 )
+
+# Lưu class indices vào file json
+with open('class_indices.json', 'w') as f:
+    json.dump(training_data.class_indices, f)
 
 # Kiểm tra tỷ lệ số lượng mẫu của từng lớp:
 from collections import Counter
@@ -98,8 +114,6 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
 plt.show()
 
 # NOTE: Load mô hình ResNet50
-#  Kích thước ảnh đầu vào (224x224 pixels, 3 kênh màu RGB).
-#  weights='imagenet': Sử dụng trọng số đã được huấn luyện sẵn trên tập ImageNet.
 #  include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
 BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights='imagenet', include_top=False)
 
@@ -135,29 +149,19 @@ x = layers.Dense(128, activation='relu')(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.5)(x)
 
-# NOTE: Lớp đầu ra phân loại (5 lớp)
-prediction = layers.Dense(5, activation='softmax')(x)
+# NOTE: Lớp đầu ra phân loại (11 lớp)
+prediction = layers.Dense(11, activation='softmax')(x)
 
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
 MODEL_RESNET50.summary()
 
-# NOTE: Compile mô hình - là bước cấu hình thuật toán tối ưu, hàm mất mát và các metrics để mô hình có thể học.
-#  nên sử dụng learning rate nhỏ hơn để tránh mô hình bị "quên" những gì ResNet50 đã học:
-#  Optimizer (Bộ tối ưu hóa): Dùng Adam với learning_rate=1e-4 để cập nhật trọng số của mô hình.
-#  Loss function (Hàm mất mát): Dùng categorical_crossentropy vì đây là bài toán phân loại nhiều lớp (multi-class classification).
-#  Metrics: Theo dõi accuracy để đánh giá độ chính xác trong quá trình huấn luyện.
-#  Mục đích của compile: Giúp mô hình sẵn sàng để huấn luyện bằng cách xác định cách nó sẽ học và tối ưu trọng số.
-# model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 MODEL_RESNET50.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
     loss='categorical_crossentropy',
     metrics=['accuracy'])
 
-# NOTE: Callbacks - là các hàm được gọi tự động trong quá trình huấn luyện để kiểm soát quá trình training.
-#  Mục đích giúp tối ưu hiệu suất mô hình,tránh overfitting, cải thiện tốc độ hội tụ bằng cách điều chỉnh learning rate.
-#  ModelCheckpoint - Lưu mô hình tốt nhất dựa trên val_loss
 checkpoint = ModelCheckpoint(
-    filepath='resnet50_best.keras',
+    filepath='resnet50_TEST.keras',
     verbose=False,
     save_best_only=True,
     monitor='val_loss',
@@ -188,9 +192,9 @@ class_weights_dict = dict(enumerate(class_weights))
 history = MODEL_RESNET50.fit(
     training_data,
     steps_per_epoch=len(training_data),
-    epochs=15,
-    validation_data=testing_data,
-    validation_steps=len(testing_data),
+    epochs=2,
+    validation_data=validation_data,
+    validation_steps=len(validation_data),
     class_weight=class_weights_dict,
     callbacks=[checkpoint, early_stop, reduce_lr]
 )
@@ -221,13 +225,3 @@ print(classification_report(y_true, y_pred, target_names=testing_data.class_indi
 
 # In ra confusion matrix
 print(confusion_matrix(y_true, y_pred))
-
-# NOTE: Support - Số lượng mẫu thực tế thuộc về mỗi lớp trong tập dữ liệu kiểm tra.
-#  Macro Avg: Trung bình cộng của precision, recall và F1-score trên tất cả các lớp mà không xét đến số lượng mẫu của từng lớp.
-#       Điều này giúp đánh giá mô hình một cách công bằng trên tất cả các lớp, kể cả những lớp có ít mẫu.
-#  Weighted Avg - Trung bình có trọng số của precision, recall và F1-score, trong đó trọng số là số lượng mẫu của từng lớp.
-#       Nó giúp phản ánh độ chính xác của mô hình theo tỷ lệ kích thước của từng lớp.
-#  Learning rate – Tốc độ học là một siêu tham số sử dụng trong việc huấn luyện các mạng nơ ron.
-#       Giá trị của nó là một số dương, thường nằm trong khoảng giữa 0 và 1.
-#       Tốc độ học kiểm soát tốc độ mô hình thay đổi các trọng số để phù hợp với bài toán.
-#       Tốc độ học lớn giúp mạng nơ ron được huấn luyện nhanh hơn nhưng cũng có thể làm giảm độ chính xác.

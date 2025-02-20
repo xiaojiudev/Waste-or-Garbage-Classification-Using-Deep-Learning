@@ -2,7 +2,7 @@
 Dataset                                 Kaggle
 Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
 Augmentation for test/val data          No
-Fine-tune                               50
+Fine-tune                               layers[-50:]
 Layer trainable                         True
 Epoch                                   15
 Layers                                  Flatten()(BASE_MODEL.output),
@@ -42,7 +42,7 @@ weighted avg       0.19      0.19      0.19      1352
 Dataset                                 Kaggle
 Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
 Augmentation for test/val data          No
-Fine-tune                               50
+Fine-tune                               layers[-50:]
 Layer trainable                         True
 Epoch                                   15
 Layers                                  Flatten()(BASE_MODEL.output),
@@ -87,7 +87,7 @@ weighted avg       0.19      0.19      0.19      1352
 Dataset                                 Kaggle
 Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
 Augmentation for test/val data          No
-Fine-tune                               50
+Fine-tune                               layers[-50:]
 Layer trainable                         True
 Epoch                                   15
 Layers                                  Conv2D(128, (3, 3), activation='relu')(x),
@@ -139,7 +139,7 @@ Dataset                                 Kaggle
 Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
 Augmentation for test/val data          No
 Shuffle for test_datagen                False
-Fine-tune                               50
+Fine-tune                               layers[-50:]
 Layer trainable                         True
 Epoch                                   15
 Layers                                  Conv2D(128, (3, 3), activation='relu')(x),
