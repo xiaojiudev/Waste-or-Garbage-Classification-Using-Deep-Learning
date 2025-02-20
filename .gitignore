@@ -6,3 +6,5 @@
 *.keras
 ~$doc.docx
 ~WRL1698.tmp
+kaggle_dataset
+github_dataset
