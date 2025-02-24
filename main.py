@@ -14,7 +14,7 @@ if gpus:
     )
 
 # Load mô hình đã huấn luyện
-model = tf.keras.models.load_model("resnet50_best.keras")
+model = tf.keras.models.load_model("resnet50_sample_for_test.keras")
 
 # Load class names từ file json
 with open('class_indices.json', 'r') as f:  # Đảm bảo file tồn tại cùng thư mục
@@ -40,6 +40,6 @@ def predict_image(img_path_or_url):
     return class_index, class_name, confidence
 
 # img_path = "plastic145.jpg"
-img_path = "https://cdn.shopify.com/s/files/1/1002/1104/files/Aug_23_Oliver_Cabell_Lion_large.jpg?v=1598199533"
+img_path = "https://ychef.files.bbci.co.uk/1280x720/p06z3hgy.jpg"
 predicted_class, predicted_name, confidence = predict_image(img_path)
 print(f"Predicted class: {predicted_class}, Predicted name: {predicted_name} Confidence: {confidence}")
