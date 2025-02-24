@@ -163,3 +163,134 @@ EarlyStopping                           (monitor='val_loss', patience=10, restor
 ReduceLROnPlateau                       (monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
 Model training                          (training_data, steps_per_epoch=len(training_data), epochs=15, validation_data=testing_data, validation_steps=len(testing_data), class_weight=class_weights_dict, callbacks=[checkpoint, early_stop, reduce_lr])
 Result
+
+
+5.
+Dataset                                 Kaggle
+Validation set                          20%
+Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
+Augmentation for test/val data          No
+Shuffle for test_datagen                False
+Fine-tune                               layers[-50:]
+Layer trainable                         True
+Epoch                                   15
+Layers                                  Conv2D(128, (3, 3), activation='relu')(x),
+                                        MaxPooling2D(pool_size=(2, 2))(x),
+                                        BatchNormalization()(x),
+                                        Conv2D(128, (3, 3), activation='relu')(x),
+                                        MaxPooling2D(pool_size=(2, 2))(x),
+                                        BatchNormalization()(x),
+                                        Flatten()(x),
+                                        Dense(512, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dense(256, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dense(128, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dropout(0.5),
+                                        Dense(5, activation='softmax')
+Compile                                 (optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+ModelCheckpoint                         (filepath='resnet50_best.keras', verbose=False, save_best_only=True, monitor='val_loss', mode='min')
+EarlyStopping                           (monitor='val_loss', patience=10, restore_best_weights=True, mode='min')
+ReduceLROnPlateau                       (monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
+Model training                          (training_data, steps_per_epoch=len(training_data), epochs=15, validation_data=testing_data, validation_steps=len(testing_data), class_weight=class_weights_dict, callbacks=[checkpoint, early_stop, reduce_lr])
+Result
+
+Epoch 15/15
+260/260 [==============================] - 115s 442ms/step - loss: 0.1207 - accuracy: 0.9600 - val_loss: 0.2490 - val_accuracy: 0.9358 - lr: 1.0000e-05
+Test Accuracy: 0.9592
+139/139 [==============================] - 15s 105ms/step
+              precision    recall  f1-score   support
+
+     battery       0.97      0.95      0.96       283
+  biological       0.97      0.96      0.97       295
+ brown-glass       0.93      0.93      0.93       182
+   cardboard       0.98      0.95      0.97       267
+     clothes       1.00      0.98      0.99      1597
+ green-glass       0.97      0.93      0.95       188
+       metal       0.86      0.93      0.89       230
+       paper       0.94      0.97      0.95       315
+     plastic       0.87      0.89      0.88       259
+       shoes       0.95      0.98      0.97       593
+ white-glass       0.93      0.88      0.91       232
+
+    accuracy                           0.96      4441
+   macro avg       0.94      0.94      0.94      4441
+weighted avg       0.96      0.96      0.96      4441
+
+[[ 269    1    1    0    0    0   11    0    0    1    0]
+ [   0  284    2    1    1    1    0    0    3    3    0]
+ [   0    0  169    0    0    0    7    0    3    1    2]
+ [   2    0    0  254    0    0    0   10    1    0    0]
+ [   0    1    0    2 1571    2    0    2    0   19    0]
+ [   0    5    2    0    0  175    2    0    4    0    0]
+ [   3    0    3    0    0    0  214    1    6    1    2]
+ [   2    1    0    1    3    0    1  305    1    1    0]
+ [   0    1    2    0    0    1    7    5  230    1   12]
+ [   1    0    2    1    1    1    0    1    2  584    0]
+ [   1    0    1    0    1    0    8    0   15    1  205]]
+
+6.
+Dataset                                 Kaggle
+Validation set                          20%
+Augmentation config                     (rescale=1.0/255, rotation_range=40,width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, # brightness_range=[0.5, 1.5], fill_mode='nearest')
+Augmentation for test/val data          No
+Shuffle for test_datagen                False
+Fine-tune                               layers[-50:]
+Layer trainable                         True
+Epoch                                   50
+Layers                                  Conv2D(128, (3, 3), activation='relu')(x),
+                                        MaxPooling2D(pool_size=(2, 2))(x),
+                                        BatchNormalization()(x),
+                                        Conv2D(128, (3, 3), activation='relu')(x),
+                                        MaxPooling2D(pool_size=(2, 2))(x),
+                                        BatchNormalization()(x),
+                                        Flatten()(x),
+                                        Dense(512, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dense(256, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dense(128, activation='relu'),
+                                        BatchNormalization()(x),
+                                        Dropout(0.5),
+                                        Dense(5, activation='softmax')
+Compile                                 (optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+ModelCheckpoint                         (filepath='resnet50_best.keras', verbose=False, save_best_only=True, monitor='val_loss', mode='min')
+EarlyStopping                           (monitor='val_loss', patience=10, restore_best_weights=True, mode='min')
+ReduceLROnPlateau                       (monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
+Model training                          (training_data, steps_per_epoch=len(training_data), epochs=15, validation_data=testing_data, validation_steps=len(testing_data), class_weight=class_weights_dict, callbacks=[checkpoint, early_stop, reduce_lr])
+Result
+
+Epoch 32/50
+260/260 [==============================] - 115s 440ms/step - loss: 0.0587 - accuracy: 0.9801 - val_loss: 0.2225 - val_accuracy: 0.9459 - lr: 1.0000e-07
+Test Accuracy: 0.9561
+139/139 [==============================] - 15s 105ms/step
+              precision    recall  f1-score   support
+
+     battery       0.97      0.92      0.94       283
+  biological       0.98      0.95      0.97       295
+ brown-glass       0.96      0.94      0.95       182
+   cardboard       0.96      0.96      0.96       267
+     clothes       0.99      0.99      0.99      1597
+ green-glass       0.98      0.95      0.96       188
+       metal       0.86      0.94      0.90       230
+       paper       0.93      0.96      0.94       315
+     plastic       0.83      0.90      0.87       259
+       shoes       0.94      0.98      0.96       593
+ white-glass       0.96      0.83      0.89       232
+
+    accuracy                           0.96      4441
+   macro avg       0.94      0.94      0.94      4441
+weighted avg       0.96      0.96      0.96      4441
+
+[[ 260    0    0    2    0    2   12    5    2    0    0]
+ [   0  280    1    2    0    2    0    1    2    7    0]
+ [   1    1  171    0    0    0    2    0    3    3    1]
+ [   0    0    1  256    0    0    1    6    1    2    0]
+ [   0    0    0    0 1576    0    0    2    1   18    0]
+ [   0    1    1    0    0  179    2    0    5    0    0]
+ [   4    0    2    0    0    0  216    2    5    1    0]
+ [   1    1    0    4    3    0    1  302    2    1    0]
+ [   1    1    0    1    0    0    7    5  234    3    7]
+ [   0    1    1    0    5    0    4    1    2  579    0]
+ [   1    0    1    1    2    0    7    2   25    0  193]]
