@@ -192,7 +192,7 @@ class_weights_dict = dict(enumerate(class_weights))
 history = MODEL_RESNET50.fit(
     training_data,
     steps_per_epoch=len(training_data),
-    epochs=2,
+    epochs=50,
     validation_data=validation_data,
     validation_steps=len(validation_data),
     class_weight=class_weights_dict,
