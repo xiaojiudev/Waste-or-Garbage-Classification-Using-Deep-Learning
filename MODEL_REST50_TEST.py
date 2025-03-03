@@ -15,21 +15,21 @@ ImageDataGenerator = tf.keras.preprocessing.image.ImageDataGenerator
 ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
 EarlyStopping = tf.keras.callbacks.EarlyStopping
 
-print("GPU available:", tf.config.list_physical_devices('GPU'))
+print("GPU available:", tf.config.list_physical_devices("GPU"))
 print("TensorFlow is using GPU:", tf.test.is_built_with_cuda())
-gpus = tf.config.list_physical_devices('GPU')
+gpus = tf.config.list_physical_devices("GPU")
 if gpus:
     tf.config.set_logical_device_configuration(
         gpus[0],
         [tf.config.LogicalDeviceConfiguration(memory_limit=8192)]
     )
 
-logical_gpus = tf.config.list_logical_devices('GPU')
+logical_gpus = tf.config.list_logical_devices("GPU")
 print(len(gpus), "Physical GPU,", len(logical_gpus), "Logical GPUs")
 
 # Thiết lập đường dẫn
-train_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/train'
-test_path = 'D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/test'
+train_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/train"
+test_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/test"
 
 # Data Augmentation
 train_datagen = ImageDataGenerator(
@@ -41,7 +41,7 @@ train_datagen = ImageDataGenerator(
     zoom_range=0.2, # Phóng to hình ảnh 20%
     horizontal_flip=True, # Lật ngang hình ảnh, giống như dối xứng qua gương
     # brightness_range=[0.5, 1.5], # NOTE: không xài cái này, làm ảnh gốc và ảnh augmentation khác nhau rất lớn
-    fill_mode='nearest', # Điền vào các pixel bị thiếu
+    fill_mode="nearest", # Điền vào các pixel bị thiếu
     validation_split=0.2 # Tách 20% làm validation
 )
 
@@ -57,9 +57,9 @@ training_data = train_datagen.flow_from_directory(
     train_path,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical',
+    class_mode="categorical",
     shuffle=True,
-    subset='training',
+    subset="training",
 )
 
 # Tạo validation data (20%)
@@ -67,20 +67,20 @@ validation_data = train_datagen.flow_from_directory(
     train_path,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical',
-    subset='validation'  # Phần dành cho validation
+    class_mode="categorical",
+    subset="validation"  # Phần dành cho validation
 )
 
 testing_data = test_datagen.flow_from_directory(
     test_path,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical',
+    class_mode="categorical",
     shuffle=False # NOTE: Đảm bảo thứ tự dữ liệu test không bị xáo trộn, giúp đánh giá metrics chính xác
 )
 
 # Lưu class indices vào file json
-with open('class_indices.json', 'w') as f:
+with open("class_indices.json", "w") as f:
     json.dump(training_data.class_indices, f)
 
 # Kiểm tra tỷ lệ số lượng mẫu của từng lớp:
@@ -115,7 +115,7 @@ plt.show()
 
 # NOTE: Load mô hình ResNet50
 #  include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
-BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights='imagenet', include_top=False)
+BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights="imagenet", include_top=False)
 
 # NOTE: Fine-tuning - Cho phép huấn luyện lại các lớp cuối của ResNet50
 #  Là quá trình tiếp tục huấn luyện một mô hình đã được huấn luyện trước bằng cách điều chỉnh một số lớp cụ thể thay vì huấn luyện từ đầu.
@@ -130,60 +130,60 @@ for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
 x = BASE_MODEL.output
 
 # NOTE: Lớp Conv2D, MaxPooling2D, BatchNormalization thêm vào sau ResNet50
-x = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
 x = layers.MaxPooling2D(pool_size=(2, 2))(x)
 x = layers.BatchNormalization()(x)
-x = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
 x = layers.MaxPooling2D(pool_size=(2, 2))(x)
 x = layers.BatchNormalization()(x)
 
 # NOTE: Thêm các lớp Fully Connected
 #  Dropout - Bỏ ngẫu nhiên 50% neuron trong quá trình huấn luyện để tránh overfitting.
-#  Dense(512, activation='relu') - Một lớp FC với 512 neuron và hàm kích hoạt ReLU.
+#  Dense(512, activation="relu") - Một lớp FC với 512 neuron và hàm kích hoạt ReLU.
 x = layers.Flatten()(x) # NOTE: Chuyển đầu ra từ ResNet50 thành một vector 1 chiều.
-x = layers.Dense(512, activation='relu')(x)
+x = layers.Dense(512, activation="relu")(x)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(256, activation='relu')(x)
+x = layers.Dense(256, activation="relu")(x)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(128, activation='relu')(x)
+x = layers.Dense(128, activation="relu")(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.5)(x)
 
 # NOTE: Lớp đầu ra phân loại (11 lớp)
-prediction = layers.Dense(11, activation='softmax')(x)
+prediction = layers.Dense(11, activation="softmax")(x)
 
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
 MODEL_RESNET50.summary()
 
 MODEL_RESNET50.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
-    loss='categorical_crossentropy',
-    metrics=['accuracy'])
+    loss="categorical_crossentropy",
+    metrics=["accuracy"])
 
 checkpoint = ModelCheckpoint(
-    filepath='resnet50_TEST.keras',
+    filepath="resnet50_TEST.keras",
     verbose=False,
     save_best_only=True,
-    monitor='val_loss',
-    mode='min')
+    monitor="val_loss",
+    mode="min")
 
 # NOTE: EarlyStopping - Dừng huấn luyện sớm nếu val_loss không cải thiện sau 10 epoch, tránh overfitting
 early_stop = EarlyStopping(
-    monitor='val_loss',
+    monitor="val_loss",
     patience=10,
     restore_best_weights=True,
-    mode='min')
+    mode="min")
 
 # NOTE: ReduceLROnPlateau - Nếu val_loss không giảm sau 5 epoch, giảm learning_rate xuống 20% để model học tốt hơn
 reduce_lr = ReduceLROnPlateau(
-    monitor='val_loss',
+    monitor="val_loss",
     factor=0.1,
     patience=3,
     min_lr=1e-7)
 
 # NOTE: Cân bằng lại tập dữ liệu - dùng class_weight trong model.fit()
 class_weights = compute_class_weight(
-    class_weight='balanced',
+    class_weight="balanced",
     classes=np.unique(training_data.classes),
     y=training_data.classes)
 class_weights_dict = dict(enumerate(class_weights))
@@ -200,19 +200,19 @@ history = MODEL_RESNET50.fit(
 )
 
 # Đánh giá mô hình
-plt.plot(history.history['accuracy'], label='Train Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.plot(history.history["accuracy"], label="Train Accuracy")
+plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
 plt.legend()
 plt.show()
 
-plt.plot(history.history['loss'], label='Train Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.plot(history.history["loss"], label="Train Loss")
+plt.plot(history.history["val_loss"], label="Validation Loss")
 plt.legend()
 plt.show()
 
 # Đánh giá trên tập test
 test_loss, test_acc = MODEL_RESNET50.evaluate(testing_data, verbose=0)
-print(f'Test Accuracy: {test_acc:.4f}')
+print(f"Test Accuracy: {test_acc:.4f}")
 
 # Dự đoán trên tập test
 y_pred = MODEL_RESNET50.predict(testing_data)

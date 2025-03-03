@@ -6,7 +6,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-gpus = tf.config.list_physical_devices('GPU')
+gpus = tf.config.list_physical_devices("GPU")
 if gpus:
     tf.config.set_logical_device_configuration(
         gpus[0],
@@ -17,13 +17,13 @@ if gpus:
 model = tf.keras.models.load_model("resnet50_sample_for_test.keras")
 
 # Load class names từ file json
-with open('class_indices.json', 'r') as f:  # Đảm bảo file tồn tại cùng thư mục
+with open("class_indices.json", "r") as f:  # Đảm bảo file tồn tại cùng thư mục
     class_indices = json.load(f)
     class_names = list(class_indices.keys())
 
 # Hàm dự đoán ảnh mới
 def predict_image(img_path_or_url):
-    if img_path_or_url.startswith('http://') or img_path_or_url.startswith('https://'):
+    if img_path_or_url.startswith("http://") or img_path_or_url.startswith("https://"):
         response = requests.get(img_path_or_url)
         img = Image.open(BytesIO(response.content))
         img = img.resize((224, 224))
