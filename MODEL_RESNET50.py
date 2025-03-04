@@ -114,6 +114,8 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
 plt.show()
 
 # NOTE: Load mô hình ResNet50
+#  Kích thước ảnh đầu vào (224x224 pixels, 3 kênh màu RGB).
+#  weights="imagenet": Sử dụng trọng số đã được huấn luyện sẵn trên tập ImageNet.
 #  include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
 BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights="imagenet", include_top=False)
 
@@ -155,11 +157,14 @@ prediction = layers.Dense(11, activation="softmax")(x)
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
 MODEL_RESNET50.summary()
 
+# NOTE: Callbacks - là các hàm được gọi tự động trong quá trình huấn luyện để kiểm soát quá trình training.
+#  Mục đích giúp tối ưu hiệu suất mô hình,tránh overfitting, cải thiện tốc độ hội tụ bằng cách điều chỉnh learning rate.
 MODEL_RESNET50.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
     loss="categorical_crossentropy",
     metrics=["accuracy"])
 
+# NOTE: ModelCheckpoint - Lưu mô hình tốt nhất dựa trên val_loss
 checkpoint = ModelCheckpoint(
     filepath="resnet50_TEST.keras",
     verbose=False,
@@ -225,3 +230,17 @@ print(classification_report(y_true, y_pred, target_names=testing_data.class_indi
 
 # In ra confusion matrix
 print(confusion_matrix(y_true, y_pred))
+
+# NOTE: Support - Số lượng mẫu thực tế thuộc về mỗi lớp trong tập dữ liệu kiểm tra.
+#  Macro Avg: Trung bình cộng của precision, recall và F1-score trên tất cả các lớp mà không xét đến số lượng mẫu của từng lớp.
+#       Điều này giúp đánh giá mô hình một cách công bằng trên tất cả các lớp, kể cả những lớp có ít mẫu.
+#  Weighted Avg - Trung bình có trọng số của precision, recall và F1-score, trong đó trọng số là số lượng mẫu của từng lớp.
+#       Nó giúp phản ánh độ chính xác của mô hình theo tỷ lệ kích thước của từng lớp.
+#  Learning rate – Tốc độ học là một siêu tham số sử dụng trong việc huấn luyện các mạng nơ ron.
+#       Giá trị của nó là một số dương, thường nằm trong khoảng giữa 0 và 1.
+#       Tốc độ học kiểm soát tốc độ mô hình thay đổi các trọng số để phù hợp với bài toán.
+#       Tốc độ học lớn giúp mạng nơ ron được huấn luyện nhanh hơn nhưng cũng có thể làm giảm độ chính xác.
+#  Trong Deep Learning, việc phân chia dữ liệu thành 3 tập riêng biệt là cực kỳ quan trọng:
+#       Train set: Huấn luyện mô hình.
+#       Validation set: Điều chỉnh siêu tham số (learning rate, số lớp, v.v.) và theo dõi overfitting trong quá trình train.
+#       Test set: Đánh giá cuối cùng một lần duy nhất sau khi mô hình đã hoàn thiện.
