@@ -3,7 +3,7 @@
 # import random
 #
 # # Đường dẫn thư mục gốc
-# base_dir = "kaggle_dataset"
+# base_dir = "my_dataset"
 # train_dir = os.path.join(base_dir, "train")
 # test_dir = os.path.join(base_dir, "test")
 #
