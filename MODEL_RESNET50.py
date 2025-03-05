@@ -14,6 +14,9 @@ ResNet50 = tf.keras.applications.ResNet50
 ImageDataGenerator = tf.keras.preprocessing.image.ImageDataGenerator
 ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
 EarlyStopping = tf.keras.callbacks.EarlyStopping
+TensorBoard = tf.keras.callbacks.TensorBoard
+CSVLogger = tf.keras.callbacks.CSVLogger
+TerminateOnNaN = tf.keras.callbacks.TerminateOnNaN
 
 print("GPU available:", tf.config.list_physical_devices("GPU"))
 print("TensorFlow is using GPU:", tf.test.is_built_with_cuda())
@@ -28,8 +31,8 @@ logical_gpus = tf.config.list_logical_devices("GPU")
 print(len(gpus), "Physical GPU,", len(logical_gpus), "Logical GPUs")
 
 # Thiết lập đường dẫn
-train_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/train"
-test_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/kaggle_dataset/test"
+train_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/my_dataset/train"
+test_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/my_dataset/test"
 
 # Data Augmentation
 train_datagen = ImageDataGenerator(
@@ -50,7 +53,7 @@ test_datagen = ImageDataGenerator(
     rescale=1.0/255,
 )
 
-# Tạo dataset từ thư mục
+# Tạo training dataset từ thư mục
 # batch_size xác định số lượng hình ảnh được xử lý trong một lần (batch) khi mô hình huấn luyện.
 # class_mode xác định cách nhãn (labels) được xử lý trong dữ liệu đầu vào: categorical, binary, sparse
 training_data = train_datagen.flow_from_directory(
@@ -71,6 +74,7 @@ validation_data = train_datagen.flow_from_directory(
     subset="validation"  # Phần dành cho validation
 )
 
+# Tạo testing dataset từ thư mục
 testing_data = test_datagen.flow_from_directory(
     test_path,
     target_size=(224, 224),
@@ -151,8 +155,8 @@ x = layers.Dense(128, activation="relu")(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.5)(x)
 
-# NOTE: Lớp đầu ra phân loại (11 lớp)
-prediction = layers.Dense(11, activation="softmax")(x)
+# NOTE: Lớp đầu ra phân loại (9 lớp)
+prediction = layers.Dense(9, activation="softmax")(x)
 
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
 MODEL_RESNET50.summary()
@@ -160,48 +164,79 @@ MODEL_RESNET50.summary()
 # NOTE: Callbacks - là các hàm được gọi tự động trong quá trình huấn luyện để kiểm soát quá trình training.
 #  Mục đích giúp tối ưu hiệu suất mô hình,tránh overfitting, cải thiện tốc độ hội tụ bằng cách điều chỉnh learning rate.
 MODEL_RESNET50.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
     loss="categorical_crossentropy",
     metrics=["accuracy"])
 
 # NOTE: ModelCheckpoint - Lưu mô hình tốt nhất dựa trên val_loss
 checkpoint = ModelCheckpoint(
-    filepath="resnet50_TEST.keras",
-    verbose=False,
+    filepath="resnet50_saved.keras", # Tên file-định dạng muốn lưu lại
+    monitor="val_loss", # Metric theo dõi (val_loss, val_accuracy,...)
+    mode="min", # Xác định metric mong muốn là tăng hay giảm ("min" cho loss, "max" cho accuracy)
     save_best_only=True,
-    monitor="val_loss",
-    mode="min")
+    save_weights_only=False, # False = Lưu cả kiến trúc model + weights, True = Chỉ lưu weight
+    save_freq="epoch", # lưu model sau mỗi "epoch" hoặc số batch (ví dụ 1000: lưu mỗi 1000 batch)
+    verbose=True, # Hiển thị thông báo khi model được lưu
+)
 
 # NOTE: EarlyStopping - Dừng huấn luyện sớm nếu val_loss không cải thiện sau 10 epoch, tránh overfitting
 early_stop = EarlyStopping(
     monitor="val_loss",
-    patience=10,
-    restore_best_weights=True,
-    mode="min")
+    mode="min",
+    patience=10, # Số epoch chờ đợi trước khi dừng
+    min_delta=0.001,  # Độ thay đổi tối thiểu để coi là cải thiện
+    baseline=None,  # Ngưỡng metric phải đạt (ví dụ baseline=0.9 cho accuracy)
+    restore_best_weights=True, # Khôi phục weights tốt nhất khi dừng
+)
 
-# NOTE: ReduceLROnPlateau - Nếu val_loss không giảm sau 5 epoch, giảm learning_rate xuống 20% để model học tốt hơn
+# NOTE: ReduceLROnPlateau - Nếu val_loss không giảm sau 5 epoch, giảm learning_rate xuống 10% để model học tốt hơn
 reduce_lr = ReduceLROnPlateau(
     monitor="val_loss",
-    factor=0.1,
-    patience=3,
-    min_lr=1e-7)
+    mode="min",
+    factor=0.1, # Hệ số giảm learning rate (new_lr = lr * factor)
+    patience=3, # Số epoch chờ trước khi giảm lr
+    min_lr=1e-7, # Giới hạn dưới của learning rate
+    min_delta=0.001, # Ngưỡng thay đổi tối thiểu để coi là "plateau"
+    verbose=1, # Hiển thị thông báo khi thay đổi lr
+)
+
+# NOTE: TensorBoard - Visualize quá trình training
+tensorboard = TensorBoard(
+    log_dir="./logs", # Thư mục lưu log
+    histogram_freq=1, # Log histograms mỗi epoch
+    update_freq="epoch", # Cập nhật log theo: epoch hoặc sau mỗi batch
+    write_graph=True, # Hiển thị graph model trong TensorBoard (ảnh hưởng performance)
+    write_images=True, # Lưu weights dưới dạng ảnh (tăng kích thước log)
+)
+
+# NOTE: CSVLogger - Lưu log training ra file CSV
+csv_logger = CSVLogger(
+    filename= "./logs/training_log.csv", # Tên file CSV output
+    separator=",", # Ký tự phân cách trong file csv (có thể dùng ; hoặc \t)
+    append=False, #  Ghi tiếp vào file cũ (True) hay tạo mới (False)
+)
+
+# NOTE: TerminateOnNaN - Dừng training nếu loss thành NaN
+termination_on = TerminateOnNaN()
 
 # NOTE: Cân bằng lại tập dữ liệu - dùng class_weight trong model.fit()
 class_weights = compute_class_weight(
-    class_weight="balanced",
-    classes=np.unique(training_data.classes),
-    y=training_data.classes)
+    class_weight="balanced", # "balane" - Tính weights tỷ lệ nghịch với tần suất lớp - None: Không cân bằng
+    classes=np.unique(training_data.classes), # Danh sách các class duy nhất
+    y=training_data.classes, # Mảng nhãn thực tế
+)
 class_weights_dict = dict(enumerate(class_weights))
 
 # Huấn luyện mô hình
 history = MODEL_RESNET50.fit(
-    training_data,
-    steps_per_epoch=len(training_data),
+    training_data, # Data generator cung cấp dữ liệu huấn luyện
+    steps_per_epoch=len(training_data), # Số batch mỗi epoch (None = tự động)
     epochs=50,
-    validation_data=validation_data,
-    validation_steps=len(validation_data),
-    class_weight=class_weights_dict,
-    callbacks=[checkpoint, early_stop, reduce_lr]
+    validation_data=validation_data, # Data generator cung cấp dữ liệu dùng để validate model sau mỗi epoch
+    validation_steps=len(validation_data), # Số batch validation (quan trọng khi dùng generator)
+    class_weight=class_weights_dict, # Dictionary chứa trọng số của từng lớp, giúp model cân bằng học khi dữ liệu có sự mất cân bằng giữa các lớp
+    callbacks=[checkpoint, early_stop, reduce_lr, tensorboard, csv_logger, termination_on],
+    verbose= "auto", # Hiển thị log trong quá trình training (0: im lặng, 1: thanh progress bar, 2: hiển thị mỗi epoch)
 )
 
 # Đánh giá mô hình
