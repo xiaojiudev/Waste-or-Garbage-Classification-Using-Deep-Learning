@@ -30,8 +30,10 @@ if gpus:
         [tf.config.LogicalDeviceConfiguration(memory_limit=8192)]
     )
 
-# Load model và class names
-model = tf.keras.models.load_model("resnet50_sample_for_test.keras")
+# Load mô hình đã huấn luyện
+model = tf.keras.models.load_model("resnet50_saved.keras.keras")
+
+# Load tên label đã lưu trong file json, nhằm ánh label và index
 with open("class_indices.json", "r") as f:
     class_indices = json.load(f)
     class_names = list(class_indices.keys())
@@ -40,11 +42,11 @@ with open("class_indices.json", "r") as f:
 WASTE_CATEGORIES = {
     "recyclable": {
         "classes": ["cardboard", "metal", "paper", "plastic",
-                   "brown-glass", "green-glass", "white-glass"],
+                   "glass"],
         "disposal": "Có thể tái chế. Vui lòng phân loại vào thùng rác tái chế."
     },
     "organic": {
-        "classes": ["biological"],
+        "classes": ["organic"],
         "disposal": "Rác hữu cơ. Có thể ủ phân hoặc xử lý bằng phương pháp sinh học."
     },
     "hazardous": {
