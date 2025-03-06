@@ -1,11 +1,14 @@
 import json
 
-import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import tensorflow as tf
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight
+from collections import Counter
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import label_binarize
 from tensorflow.keras.callbacks import ReduceLROnPlateau
+from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc, precision_recall_curve
 
 keras = tf.keras
 layers = tf.keras.layers
@@ -20,12 +23,17 @@ TerminateOnNaN = tf.keras.callbacks.TerminateOnNaN
 
 print("GPU available:", tf.config.list_physical_devices("GPU"))
 print("TensorFlow is using GPU:", tf.test.is_built_with_cuda())
+
+# Tối ưu bộ nhớ GPU
 gpus = tf.config.list_physical_devices("GPU")
 if gpus:
-    tf.config.set_logical_device_configuration(
-        gpus[0],
-        [tf.config.LogicalDeviceConfiguration(memory_limit=8192)]
-    )
+    try:
+        tf.config.set_logical_device_configuration(
+            gpus[0],
+            [tf.config.LogicalDeviceConfiguration(memory_limit=8192)]
+        )
+    except RuntimeError as e:
+        print(e)
 
 logical_gpus = tf.config.list_logical_devices("GPU")
 print(len(gpus), "Physical GPU,", len(logical_gpus), "Logical GPUs")
@@ -88,9 +96,41 @@ with open("class_indices.json", "w") as f:
     json.dump(training_data.class_indices, f)
 
 # Kiểm tra tỷ lệ số lượng mẫu của từng lớp:
-from collections import Counter
 print("Training class distribution:", Counter(training_data.classes))
+print("Validation class distribution:", Counter(validation_data.classes))
 print("Testing class distribution:", Counter(testing_data.classes))
+
+# NOTE: Vẽ biểu đồ Phân bố Lớp (Class Distribution)
+#  Cho thấy sự cân bằng của dữ liệu. Mất cân bằng lớp có thể ảnh hưởng đến độ chính xác
+def plot_class_distribution(counter, title, path):
+    plt.figure(figsize=(10, 6))
+
+    # Ánh xạ index thành tên lớp
+    labels = [list(training_data.class_indices.keys())[idx] for idx in counter.keys()]
+    counts = list(counter.values())
+
+    # Vẽ biểu đồ
+    plt.bar(labels, counts)
+    plt.title(title, fontsize=14)
+    plt.xlabel("Class", fontsize=12)
+    plt.ylabel("Count", fontsize=12)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(path, format="png", dpi=300)
+    plt.close()
+
+# Vẽ cho cả 3 tập train, validate, test
+plot_class_distribution(Counter(training_data.classes),
+                       "Training Set Class Distribution",
+                       "./screen_shot/train_dist.png")
+
+plot_class_distribution(Counter(validation_data.classes),
+                       "Validation Set Class Distribution",
+                       "./screen_shot/val_dist.png")
+
+plot_class_distribution(Counter(testing_data.classes),
+                       "Testing Set Class Distribution",
+                       "./screen_shot/test_dist.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -98,14 +138,17 @@ batch_images, batch_labels = next(training_data)
 # Lấy một ảnh từ batch
 original_image = batch_images[0]
 
-# Hiển thị ảnh gốc
+# NOTE: Hiển thị ảnh gốc trước khi Augmentation
 plt.figure(figsize=(3, 3))
 plt.imshow(original_image)
 plt.title("Ảnh Gốc (Đã Rescale)")
 plt.axis("off")
+plt.tight_layout()
+plt.savefig("./screen_shot/original_image.png", format="png", dpi=300)
 plt.show()
+plt.close()
 
-# Hiển thị các ảnh đã Augmentation
+# NOTE: Hiển thị các ảnh sau khi Augmentation
 plt.figure(figsize=(12, 6))
 for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     augmented_image = train_datagen.random_transform(original_image)  # Áp dụng Augmentation lên ảnh gốc
@@ -115,20 +158,26 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     plt.title(f"Ảnh Augmentation {i+1}")
     plt.axis("off")
 
+plt.tight_layout()
+plt.savefig("./screen_shot/augmented_image.png", format="png", dpi=300)
 plt.show()
+plt.close()
 
 # NOTE: Load mô hình ResNet50
-#  Kích thước ảnh đầu vào (224x224 pixels, 3 kênh màu RGB).
-#  weights="imagenet": Sử dụng trọng số đã được huấn luyện sẵn trên tập ImageNet.
-#  include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
+#  1. Kích thước ảnh đầu vào (224x224 pixels, 3 kênh màu RGB).
+#  2. weights="imagenet": Sử dụng trọng số đã được huấn luyện sẵn trên tập ImageNet.
+#  3. include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
 BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights="imagenet", include_top=False)
 
 # NOTE: Fine-tuning - Cho phép huấn luyện lại các lớp cuối của ResNet50
-#  Là quá trình tiếp tục huấn luyện một mô hình đã được huấn luyện trước bằng cách điều chỉnh một số lớp cụ thể thay vì huấn luyện từ đầu.
-#  Cách làm này giúp mô hình học thêm các đặc trưng cụ thể của dữ liệu mới mà không làm mất đi kiến thức tổng quát từ ImageNet.
-#  Nếu ta không fine-tune, mô hình chỉ sử dụng các đặc trưng có sẵn của ResNet50 mà không điều chỉnh cho bài toán cụ thể.
-#  layer.trainable = False - trọng số của lớp này sẽ không thay đổi trong quá trình huấn luyện
-#  layer.trainable = True - trọng số của lớp này sẽ được huấn luyện và cập nhật trọng số bình thường
+#  1. Là quá trình tiếp tục huấn luyện một mô hình đã được huấn luyện trước bằng cách điều chỉnh một số lớp cụ thể thay vì huấn luyện từ đầu.
+#  2. Cách làm này giúp mô hình học thêm các đặc trưng cụ thể của dữ liệu mới mà không làm mất đi kiến thức tổng quát từ ImageNet.
+#  3. Nếu ta không fine-tune, mô hình chỉ sử dụng các đặc trưng có sẵn của ResNet50 mà không điều chỉnh cho bài toán cụ thể.
+#       layer.trainable = False - trọng số của lớp này sẽ không thay đổi trong quá trình huấn luyện
+#       layer.trainable = True - trọng số của lớp này sẽ được huấn luyện và cập nhật trọng số bình thường
+#  4. Các lớp sâu trong CNN học các đặc trưng tổng quát (ví dụ: cạnh, hình dạng),
+#       trong khi các lớp cuối học đặc trưng cụ thể cho bài toán (ví dụ: hình dạng đối tượng).
+#       Fine-tuning giúp tối ưu hóa các đặc trưng này.
 for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
     layer.trainable = True
 
@@ -136,26 +185,51 @@ for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
 x = BASE_MODEL.output
 
 # NOTE: Lớp Conv2D, MaxPooling2D, BatchNormalization thêm vào sau ResNet50
-x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
-x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-x = layers.BatchNormalization()(x)
-x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
-x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-x = layers.BatchNormalization()(x)
+#  1. Conv2D (Convolutional Layer)
+#       Mục đích: Trích xuất đặc trưng từ đầu ra của ResNet50
+#       Tham số:
+#           128: Số filters (bộ lọc) để phát hiện 128 đặc trưng khác nhau
+#           (3, 3): Kích thước kernel (3x3 pixel)
+#           activation="relu": Hàm kích hoạt ReLU để tạo tính phi tuyến
+#           padding="same": Giữ nguyên kích thước ảnh sau tích chập
+#  2. MaxPooling2D
+#       Mục đích: Giảm kích thước không gian của đặc trưng, tập trung vào thông tin quan trọng
+#       Cơ chế: Chọn giá trị lớn nhất trong vùng 2x2, giúp giảm kích thước ảnh một nửa (ví dụ: từ 224x224 xuống 112x112)
+#  3. BatchNormalization
+#       Mục đích: Chuẩn hóa đầu vào về phân phối chuẩn (mean=0, std=1) để tăng tốc độ huấn luyện và ổn định mô hình.
+#       Lợi ích: Giảm hiện tượng "internal covariate shift", giúp mô hình hội tụ nhanh hơn.
+# x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
+# x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+# x = layers.BatchNormalization()(x)
+# x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
+# x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+# x = layers.BatchNormalization()(x)
+x = layers.GlobalAveragePooling2D()(x)
 
-# NOTE: Thêm các lớp Fully Connected
-#  Dropout - Bỏ ngẫu nhiên 50% neuron trong quá trình huấn luyện để tránh overfitting.
-#  Dense(512, activation="relu") - Một lớp FC với 512 neuron và hàm kích hoạt ReLU.
-x = layers.Flatten()(x) # NOTE: Chuyển đầu ra từ ResNet50 thành một vector 1 chiều.
-x = layers.Dense(512, activation="relu")(x)
+# NOTE: Thêm các layers Fully Connected
+#  1. Flatten
+#       Mục đích: Chuyển tensor đa chiều (ví dụ: 7x7x128) thành vector 1D (ví dụ: 6272 chiều) để đưa vào lớp FC
+#  2. Dense (Fully Connected Layer)
+#       Mục đích: Kết hợp các đặc trưng để học mối quan hệ phi tuyến phức tạp
+#           512: Số neuron trong lớp
+#           activation="relu": Hàm kích hoạt ReLU
+#  3. Dropout
+#       Mục đích: Giảm overfitting bằng cách tắt ngẫu nhiên 50% neuron trong quá trình huấn luyện,
+#           buộc mạng học các đặc trưng tổng quát, tránh overfitting.
+x = layers.Flatten()(x)
+x = layers.Dense(512, activation="relu", kernel_regularizer=keras.regularizers.l2(0.001))(x)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(256, activation="relu")(x)
+x = layers.Dropout(0.4)(x)
+
+x = layers.Dense(256, activation="relu", kernel_regularizer=keras.regularizers.l2(0.001))(x)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(128, activation="relu")(x)
-x = layers.BatchNormalization()(x)
-x = layers.Dropout(0.5)(x)
+# x = layers.Dense(128, activation="relu")(x)
+# x = layers.BatchNormalization()(x)
+x = layers.Dropout(0.3)(x)
 
 # NOTE: Lớp đầu ra phân loại (9 lớp)
+#       Mục đích: Phân loại ảnh vào 9 lớp
+#           activation="softmax": Chuẩn hóa đầu ra thành xác suất (tổng bằng 1)
 prediction = layers.Dense(9, activation="softmax")(x)
 
 MODEL_RESNET50 = Model(inputs=BASE_MODEL.input, outputs=prediction)
@@ -231,7 +305,7 @@ class_weights_dict = dict(enumerate(class_weights))
 history = MODEL_RESNET50.fit(
     training_data, # Data generator cung cấp dữ liệu huấn luyện
     steps_per_epoch=len(training_data), # Số batch mỗi epoch (None = tự động)
-    epochs=50,
+    epochs=100,
     validation_data=validation_data, # Data generator cung cấp dữ liệu dùng để validate model sau mỗi epoch
     validation_steps=len(validation_data), # Số batch validation (quan trọng khi dùng generator)
     class_weight=class_weights_dict, # Dictionary chứa trọng số của từng lớp, giúp model cân bằng học khi dữ liệu có sự mất cân bằng giữa các lớp
@@ -239,15 +313,22 @@ history = MODEL_RESNET50.fit(
     verbose= "auto", # Hiển thị log trong quá trình training (0: im lặng, 1: thanh progress bar, 2: hiển thị mỗi epoch)
 )
 
-# Đánh giá mô hình
+# NOTE: Biểu đồ đánh giá mô hình
+#  Hiển thị mối tương quan giữa accuracy và val_accuracy
 plt.plot(history.history["accuracy"], label="Train Accuracy")
 plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
 plt.legend()
+plt.savefig("./screen_shot/train_accuracy.png", format="png", dpi=300)
+plt.tight_layout()
 plt.show()
 
+# NOTE: Biểu đồ đánh giá mô hình
+#  Hiển thị mối tương quan giữa loss và val_loss
 plt.plot(history.history["loss"], label="Train Loss")
 plt.plot(history.history["val_loss"], label="Validation Loss")
 plt.legend()
+plt.savefig("./screen_shot/train_loss.png", format="png", dpi=300)
+plt.tight_layout()
 plt.show()
 
 # Đánh giá trên tập test
@@ -265,6 +346,96 @@ print(classification_report(y_true, y_pred, target_names=testing_data.class_indi
 
 # In ra confusion matrix
 print(confusion_matrix(y_true, y_pred))
+
+# NOTE: Biểu đồ Confusion Matrix Heatmap
+#  Đánh giá chi tiết hiệu năng từng lớp, nhận diện lớp nào model hay nhầm lẫn
+def plot_confusion_matrix(true, predict, class_names, path):
+    cm = confusion_matrix(true, predict)
+    plt.figure(figsize=(12, 10))
+    sns.heatmap(cm, annot=True, fmt="d",
+                xticklabels=class_names,
+                yticklabels=class_names,
+                cmap="Blues")
+    plt.title("Confusion Matrix", fontsize=16)
+    plt.xlabel("Predicted", fontsize=14)
+    plt.ylabel("True", fontsize=14)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(path, format="png", dpi=300)
+    plt.close()
+
+class_names = list(testing_data.class_indices.keys())
+plot_confusion_matrix(y_true, y_pred, class_names,"./screen_shot/confusion_matrix.png")
+
+# NOTE: Biểu đồ ROC Curve cho Multi-class
+#  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
+# Chuẩn bị dữ liệu
+y_true_bin = label_binarize(y_true, classes=np.arange(9))
+y_pred_bin = label_binarize(y_pred, classes=np.arange(9))
+
+# Tính ROC cho từng lớp
+fpr = dict()
+tpr = dict()
+roc_auc = dict()
+for i in range(9):
+    fpr[i], tpr[i], _ = roc_curve(y_true_bin[:, i], y_pred_bin[:, i])
+    roc_auc[i] = auc(fpr[i], tpr[i])
+
+# Vẽ tất cả ROC curves
+plt.figure(figsize=(10, 8))
+colors = ["blue", "red", "green", "orange", "purple",
+         "brown", "pink", "gray", "olive"]
+for i, color in zip(range(9), colors):
+    plt.plot(fpr[i], tpr[i], color=color, lw=2,
+             label=f"Class {class_names[i]} (AUC = {roc_auc[i]:.2f})")
+
+plt.plot([0, 1], [0, 1], "k--", lw=2)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel("False Positive Rate", fontsize=14)
+plt.ylabel("True Positive Rate", fontsize=14)
+plt.title("ROC Curves for All Classes", fontsize=16)
+plt.legend(loc="lower right", prop={"size": 8})
+plt.tight_layout()
+plt.savefig("./screen_shot/roc_curve.png", format="png", dpi=300)
+plt.close()
+
+# NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
+#  Trực quan hóa lỗi model, giúp phân tích nguyên nhân (ảnh mờ, góc chụp lạ...)
+# Lấy một số mẫu dự đoán sai
+incorrect_indices = np.where(y_pred != y_true)[0]
+num_samples = min(9, len(incorrect_indices))
+
+plt.figure(figsize=(12, 12))
+for i, idx in enumerate(incorrect_indices[:num_samples]):
+    img_path = testing_data.filepaths[idx]
+    img = plt.imread(img_path)
+    plt.subplot(3, 3, i+1)
+    plt.imshow(img)
+    plt.title(f"True: {class_names[y_true[idx]]}\nPred: {class_names[y_pred[idx]]}")
+    plt.axis("off")
+
+plt.suptitle("Example of Incorrect Predictions", fontsize=16)
+plt.tight_layout()
+plt.savefig("./screen_shot/wrong_predictions.png", format="png", dpi=300)
+plt.close()
+
+# NOTE: Biểu đồ Precision-Recall cho từng lớp
+#  Đặc biệt hữu ích khi dữ liệu mất cân bằng, cho thấy trade-off giữa precision và recall
+plt.figure(figsize=(10, 8))
+for i, color in zip(range(9), colors):
+    precision, recall, _ = precision_recall_curve(y_true_bin[:,i], y_pred_bin[:,i])
+    plt.plot(recall, precision, color=color, lw=2,
+             label=f"Class {class_names[i]}")
+
+plt.xlabel("Recall", fontsize=14)
+plt.ylabel("Precision", fontsize=14)
+plt.title("Precision-Recall Curves", fontsize=16)
+plt.legend(loc="best", prop={"size": 8})
+plt.tight_layout()
+plt.savefig("./screen_shot/precision_recall.png", format="png", dpi=300)
+plt.close()
+
 
 # NOTE: Support - Số lượng mẫu thực tế thuộc về mỗi lớp trong tập dữ liệu kiểm tra.
 #  Macro Avg: Trung bình cộng của precision, recall và F1-score trên tất cả các lớp mà không xét đến số lượng mẫu của từng lớp.
