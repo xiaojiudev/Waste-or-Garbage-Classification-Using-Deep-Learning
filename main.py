@@ -31,7 +31,7 @@ if gpus:
     )
 
 # Load mô hình đã huấn luyện
-model = tf.keras.models.load_model("resnet50_saved.keras.keras")
+model = tf.keras.models.load_model("resnet50_saved.keras")
 
 # Load tên label đã lưu trong file json, nhằm ánh label và index
 with open("class_indices.json", "r") as f:
@@ -101,13 +101,15 @@ async def predict_image(image: Image.Image) -> dict:
         # Print or log the classes with their confidence
         top_predictions = [{"class": name, "confidence": conf} for name, conf in top_classes]
 
-        return {
+        result = {
             "class": class_name,
             "confidence": confidence,
             "category": waste_info["category"],
             "disposal_instruction": waste_info["disposal"],
             "top_predictions": top_predictions,
         }
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
