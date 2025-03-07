@@ -3,6 +3,7 @@ import json
 import numpy as np
 import seaborn as sns
 import tensorflow as tf
+from datetime import datetime
 from collections import Counter
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import label_binarize
@@ -53,7 +54,7 @@ train_datagen = ImageDataGenerator(
     horizontal_flip=True, # Lật ngang hình ảnh, giống như dối xứng qua gương
     # brightness_range=[0.5, 1.5], # NOTE: không xài cái này, làm ảnh gốc và ảnh augmentation khác nhau rất lớn
     fill_mode="nearest", # Điền vào các pixel bị thiếu
-    validation_split=0.2 # Tách 20% làm validation
+    validation_split=0.2, # Tách 20% làm validation
 )
 
 # Chỉ áp dụng augmentation cho tập train, tập test CHỈ rescale. Nếu không sẽ gây nhiễu dữ liệu và làm sai lệch kết quả đánh giá.
@@ -79,7 +80,7 @@ validation_data = train_datagen.flow_from_directory(
     target_size=(224, 224),
     batch_size=32,
     class_mode="categorical",
-    subset="validation"  # Phần dành cho validation
+    subset="validation",  # Phần dành cho validation
 )
 
 # Tạo testing dataset từ thư mục
@@ -88,7 +89,7 @@ testing_data = test_datagen.flow_from_directory(
     target_size=(224, 224),
     batch_size=32,
     class_mode="categorical",
-    shuffle=False # NOTE: Đảm bảo thứ tự dữ liệu test không bị xáo trộn, giúp đánh giá metrics chính xác
+    shuffle=False, # NOTE: Đảm bảo thứ tự dữ liệu test không bị xáo trộn, giúp đánh giá metrics chính xác
 )
 
 # Lưu class indices vào file json
@@ -119,18 +120,20 @@ def plot_class_distribution(counter, title, path):
     plt.savefig(path, format="png", dpi=300)
     plt.close()
 
+current_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
 # Vẽ cho cả 3 tập train, validate, test
 plot_class_distribution(Counter(training_data.classes),
                        "Training Set Class Distribution",
-                       "./screen_shot/train_dist.png")
+                       f"./screen_shot/train_dist_{current_timestamp}.png")
 
 plot_class_distribution(Counter(validation_data.classes),
                        "Validation Set Class Distribution",
-                       "./screen_shot/val_dist.png")
+                       f"./screen_shot/val_dist_{current_timestamp}.png")
 
 plot_class_distribution(Counter(testing_data.classes),
                        "Testing Set Class Distribution",
-                       "./screen_shot/test_dist.png")
+                       f"./screen_shot/test_dist_{current_timestamp}.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -144,7 +147,7 @@ plt.imshow(original_image)
 plt.title("Ảnh Gốc (Đã Rescale)")
 plt.axis("off")
 plt.tight_layout()
-plt.savefig("./screen_shot/original_image.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/original_image_{current_timestamp}.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -159,7 +162,7 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     plt.axis("off")
 
 plt.tight_layout()
-plt.savefig("./screen_shot/augmented_image.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/augmented_image_{current_timestamp}.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -223,9 +226,11 @@ x = layers.Dropout(0.4)(x)
 
 x = layers.Dense(256, activation="relu", kernel_regularizer=keras.regularizers.l2(0.001))(x)
 x = layers.BatchNormalization()(x)
-# x = layers.Dense(128, activation="relu")(x)
-# x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.3)(x)
+
+x = layers.Dense(128, activation="relu", kernel_regularizer=keras.regularizers.l2(0.001))(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dropout(0.2)(x)
 
 # NOTE: Lớp đầu ra phân loại (9 lớp)
 #       Mục đích: Phân loại ảnh vào 9 lớp
@@ -244,7 +249,7 @@ MODEL_RESNET50.compile(
 
 # NOTE: ModelCheckpoint - Lưu mô hình tốt nhất dựa trên val_loss
 checkpoint = ModelCheckpoint(
-    filepath="resnet50_saved.keras", # Tên file-định dạng muốn lưu lại
+    filepath=f"resnet50_saved_{current_timestamp}.keras", # Tên file-định dạng muốn lưu lại
     monitor="val_loss", # Metric theo dõi (val_loss, val_accuracy,...)
     mode="min", # Xác định metric mong muốn là tăng hay giảm ("min" cho loss, "max" cho accuracy)
     save_best_only=True,
@@ -284,8 +289,10 @@ tensorboard = TensorBoard(
 )
 
 # NOTE: CSVLogger - Lưu log training ra file CSV
+log_filename = f"./logs/training_log_{current_timestamp}.csv"
+
 csv_logger = CSVLogger(
-    filename= "./logs/training_log.csv", # Tên file CSV output
+    filename= log_filename, # Tên file CSV output
     separator=",", # Ký tự phân cách trong file csv (có thể dùng ; hoặc \t)
     append=False, #  Ghi tiếp vào file cũ (True) hay tạo mới (False)
 )
@@ -302,10 +309,11 @@ class_weights = compute_class_weight(
 class_weights_dict = dict(enumerate(class_weights))
 
 # Huấn luyện mô hình
+epochs = 100
 history = MODEL_RESNET50.fit(
     training_data, # Data generator cung cấp dữ liệu huấn luyện
     steps_per_epoch=len(training_data), # Số batch mỗi epoch (None = tự động)
-    epochs=100,
+    epochs=epochs,
     validation_data=validation_data, # Data generator cung cấp dữ liệu dùng để validate model sau mỗi epoch
     validation_steps=len(validation_data), # Số batch validation (quan trọng khi dùng generator)
     class_weight=class_weights_dict, # Dictionary chứa trọng số của từng lớp, giúp model cân bằng học khi dữ liệu có sự mất cân bằng giữa các lớp
@@ -315,19 +323,32 @@ history = MODEL_RESNET50.fit(
 
 # NOTE: Biểu đồ đánh giá mô hình
 #  Hiển thị mối tương quan giữa accuracy và val_accuracy
-plt.plot(history.history["accuracy"], label="Train Accuracy")
-plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
-plt.legend()
-plt.savefig("./screen_shot/train_accuracy.png", format="png", dpi=300)
+acc = history.history["accuracy"]
+val_acc = history.history["val_accuracy"]
+
+loss = history.history["loss"]
+val_loss = history.history["val_loss"]
+
+epochs_range = range(epochs)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label="Training Accuracy")
+plt.plot(epochs_range, val_acc, label="Validation Accuracy")
+plt.legend(loc="lower right")
+plt.title("Training and Validation Accuracy")
+plt.savefig(f"./screen_shot/train_accuracy_{current_timestamp}.png", format="png", dpi=300)
 plt.tight_layout()
 plt.show()
 
 # NOTE: Biểu đồ đánh giá mô hình
 #  Hiển thị mối tương quan giữa loss và val_loss
-plt.plot(history.history["loss"], label="Train Loss")
-plt.plot(history.history["val_loss"], label="Validation Loss")
-plt.legend()
-plt.savefig("./screen_shot/train_loss.png", format="png", dpi=300)
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label="Train Loss")
+plt.plot(epochs_range, val_loss, label="Validation Loss")
+plt.legend(loc="upper right")
+plt.title("Training and Validation Loss")
+plt.savefig(f"./screen_shot/train_loss_{current_timestamp}.png", format="png", dpi=300)
 plt.tight_layout()
 plt.show()
 
@@ -365,7 +386,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
     plt.close()
 
 class_names = list(testing_data.class_indices.keys())
-plot_confusion_matrix(y_true, y_pred, class_names,"./screen_shot/confusion_matrix.png")
+plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/confusion_matrix_{current_timestamp}.png")
 
 # NOTE: Biểu đồ ROC Curve cho Multi-class
 #  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
@@ -397,7 +418,7 @@ plt.ylabel("True Positive Rate", fontsize=14)
 plt.title("ROC Curves for All Classes", fontsize=16)
 plt.legend(loc="lower right", prop={"size": 8})
 plt.tight_layout()
-plt.savefig("./screen_shot/roc_curve.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/roc_curve_{current_timestamp}.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
@@ -417,7 +438,7 @@ for i, idx in enumerate(incorrect_indices[:num_samples]):
 
 plt.suptitle("Example of Incorrect Predictions", fontsize=16)
 plt.tight_layout()
-plt.savefig("./screen_shot/wrong_predictions.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/wrong_predictions_{current_timestamp}.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Precision-Recall cho từng lớp
@@ -433,7 +454,7 @@ plt.ylabel("Precision", fontsize=14)
 plt.title("Precision-Recall Curves", fontsize=16)
 plt.legend(loc="best", prop={"size": 8})
 plt.tight_layout()
-plt.savefig("./screen_shot/precision_recall.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/precision_recall_{current_timestamp}.png", format="png", dpi=300)
 plt.close()
 
 
