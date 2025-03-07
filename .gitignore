@@ -1,13 +1,12 @@
-*.jpg
-*.png
-*.jpeg
 .idea/
 *.h5
 *.keras
 ~$doc.docx
 ~WRL1698.tmp
+flutter_app/android/**/*.png
+flutter_app/ios/**/*.png
 kaggle_dataset
 ref_dataset
-my_dataset
+my_dataset/**/*.png
 logs
 task.txt
