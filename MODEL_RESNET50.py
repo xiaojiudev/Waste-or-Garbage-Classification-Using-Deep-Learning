@@ -1,5 +1,5 @@
+import os
 import json
-
 import numpy as np
 import seaborn as sns
 import tensorflow as tf
@@ -111,29 +111,49 @@ def plot_class_distribution(counter, title, path):
     counts = list(counter.values())
 
     # Vẽ biểu đồ
-    plt.bar(labels, counts)
+    bars = plt.bar(labels, counts)
+
+    # Thêm giá trị lên trên mỗi thanh cột
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(
+            x=bar.get_x() + bar.get_width() / 2,  # X position: center of bar
+            y=height + 0.02 * max(counts),  # Y position: slightly above bar
+            s=f'{int(height)}',  # Display integer value
+            ha='center',  # Horizontal alignment
+            va='bottom',  # Vertical alignment
+            fontsize=10
+        )
+
+    # Thiết lập tiêu đề và nhãn
     plt.title(title, fontsize=14)
     plt.xlabel("Class", fontsize=12)
     plt.ylabel("Count", fontsize=12)
     plt.xticks(rotation=45, ha="right")
+
+    # Điều chỉnh giới hạn trục y để chứa nhãn văn bản
+    plt.ylim(0, max(counts) * 1.15)
+
     plt.tight_layout()
     plt.savefig(path, format="png", dpi=300)
     plt.close()
 
 current_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+save_dir = f"./screen_shot/{current_timestamp}"
+os.makedirs(save_dir, exist_ok=True) # Tạo thư mục nếu chưa tồn tại
 
 # Vẽ cho cả 3 tập train, validate, test
 plot_class_distribution(Counter(training_data.classes),
                        "Training Set Class Distribution",
-                       f"./screen_shot/train_dist_{current_timestamp}.png")
+                       f"./screen_shot/{current_timestamp}/train_dist.png")
 
 plot_class_distribution(Counter(validation_data.classes),
                        "Validation Set Class Distribution",
-                       f"./screen_shot/val_dist_{current_timestamp}.png")
+                       f"./screen_shot/{current_timestamp}/val_dist.png")
 
 plot_class_distribution(Counter(testing_data.classes),
                        "Testing Set Class Distribution",
-                       f"./screen_shot/test_dist_{current_timestamp}.png")
+                       f"./screen_shot/{current_timestamp}/test_dist.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -147,7 +167,7 @@ plt.imshow(original_image)
 plt.title("Ảnh Gốc (Đã Rescale)")
 plt.axis("off")
 plt.tight_layout()
-plt.savefig(f"./screen_shot/original_image_{current_timestamp}.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/{current_timestamp}/original_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -162,7 +182,7 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     plt.axis("off")
 
 plt.tight_layout()
-plt.savefig(f"./screen_shot/augmented_image_{current_timestamp}.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/{current_timestamp}/augmented_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -201,13 +221,13 @@ x = BASE_MODEL.output
 #  3. BatchNormalization
 #       Mục đích: Chuẩn hóa đầu vào về phân phối chuẩn (mean=0, std=1) để tăng tốc độ huấn luyện và ổn định mô hình.
 #       Lợi ích: Giảm hiện tượng "internal covariate shift", giúp mô hình hội tụ nhanh hơn.
-# x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
-# x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-# x = layers.BatchNormalization()(x)
-# x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
-# x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-# x = layers.BatchNormalization()(x)
-x = layers.GlobalAveragePooling2D()(x)
+x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
+x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+x = layers.BatchNormalization()(x)
+x = layers.Conv2D(128, (3, 3), activation="relu", padding="same")(x)
+x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+x = layers.BatchNormalization()(x)
+# x = layers.GlobalAveragePooling2D()(x)
 
 # NOTE: Thêm các layers Fully Connected
 #  1. Flatten
@@ -322,35 +342,45 @@ history = MODEL_RESNET50.fit(
 )
 
 # NOTE: Biểu đồ đánh giá mô hình
-#  Hiển thị mối tương quan giữa accuracy và val_accuracy
+#  Hiển thị mối tương quan giữa accuracy và val_accuracy (hình bên trái)
+#  Hiển thị mối tương quan giữa loss và val_loss (hình bên phải)
 acc = history.history["accuracy"]
 val_acc = history.history["val_accuracy"]
 
 loss = history.history["loss"]
 val_loss = history.history["val_loss"]
 
-epochs_range = range(epochs)
+epochs_range = range(len(acc))
 
-plt.figure(figsize=(8, 8))
+plt.figure(figsize=(12, 6))
+
+# Biểu đồ phụ đầu tiên (bên trái): Training and Validation Accuracy
 plt.subplot(1, 2, 1)
 plt.plot(epochs_range, acc, label="Training Accuracy")
 plt.plot(epochs_range, val_acc, label="Validation Accuracy")
 plt.legend(loc="lower right")
 plt.title("Training and Validation Accuracy")
-plt.savefig(f"./screen_shot/train_accuracy_{current_timestamp}.png", format="png", dpi=300)
-plt.tight_layout()
-plt.show()
+plt.xlabel("Actual Epochs")
+plt.ylabel("Accuracy")
 
-# NOTE: Biểu đồ đánh giá mô hình
-#  Hiển thị mối tương quan giữa loss và val_loss
+# Biểu đồ phụ đầu tiên (bên phải): Training and Validation Loss
 plt.subplot(1, 2, 2)
 plt.plot(epochs_range, loss, label="Train Loss")
 plt.plot(epochs_range, val_loss, label="Validation Loss")
 plt.legend(loc="upper right")
 plt.title("Training and Validation Loss")
-plt.savefig(f"./screen_shot/train_loss_{current_timestamp}.png", format="png", dpi=300)
+plt.xlabel("Actual Epochs")
+plt.ylabel("Loss")
+
+# Điều chỉnh bố cục để tránh chồng chéo
 plt.tight_layout()
+
+# Save the combined figure with a reasonable name
+plt.savefig(f"./screen_shot/{current_timestamp}/training_metrics.png", format="png", dpi=300)
+
+# Hiển thị hình ảnh
 plt.show()
+plt.close()
 
 # Đánh giá trên tập test
 test_loss, test_acc = MODEL_RESNET50.evaluate(testing_data, verbose=0)
@@ -386,7 +416,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
     plt.close()
 
 class_names = list(testing_data.class_indices.keys())
-plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/confusion_matrix_{current_timestamp}.png")
+plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/{current_timestamp}/confusion_matrix.png")
 
 # NOTE: Biểu đồ ROC Curve cho Multi-class
 #  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
@@ -418,7 +448,7 @@ plt.ylabel("True Positive Rate", fontsize=14)
 plt.title("ROC Curves for All Classes", fontsize=16)
 plt.legend(loc="lower right", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/roc_curve_{current_timestamp}.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/{current_timestamp}/roc_curve.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
@@ -438,7 +468,7 @@ for i, idx in enumerate(incorrect_indices[:num_samples]):
 
 plt.suptitle("Example of Incorrect Predictions", fontsize=16)
 plt.tight_layout()
-plt.savefig(f"./screen_shot/wrong_predictions_{current_timestamp}.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/{current_timestamp}/wrong_predictions.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Precision-Recall cho từng lớp
@@ -454,7 +484,7 @@ plt.ylabel("Precision", fontsize=14)
 plt.title("Precision-Recall Curves", fontsize=16)
 plt.legend(loc="best", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/precision_recall_{current_timestamp}.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/{current_timestamp}/precision_recall.png", format="png", dpi=300)
 plt.close()
 
 
