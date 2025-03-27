@@ -93,7 +93,7 @@ testing_data = test_datagen.flow_from_directory(
 )
 
 # Lưu class indices vào file json
-with open("class_indices.json", "w") as f:
+with open("resnet_class_indices.json", "w") as f:
     json.dump(training_data.class_indices, f)
 
 # Kiểm tra tỷ lệ số lượng mẫu của từng lớp:
@@ -119,9 +119,9 @@ def plot_class_distribution(counter, title, path):
         plt.text(
             x=bar.get_x() + bar.get_width() / 2,  # X position: center of bar
             y=height + 0.02 * max(counts),  # Y position: slightly above bar
-            s=f'{int(height)}',  # Display integer value
-            ha='center',  # Horizontal alignment
-            va='bottom',  # Vertical alignment
+            s=f"{int(height)}",  # Display integer value
+            ha="center",  # Horizontal alignment
+            va="bottom",  # Vertical alignment
             fontsize=10
         )
 
@@ -138,22 +138,22 @@ def plot_class_distribution(counter, title, path):
     plt.savefig(path, format="png", dpi=300)
     plt.close()
 
-current_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-save_dir = f"./screen_shot/{current_timestamp}"
+current_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+save_dir = f"./screen_shot/resnet50/{current_timestamp}"
 os.makedirs(save_dir, exist_ok=True) # Tạo thư mục nếu chưa tồn tại
 
 # Vẽ cho cả 3 tập train, validate, test
 plot_class_distribution(Counter(training_data.classes),
                        "Training Set Class Distribution",
-                       f"./screen_shot/{current_timestamp}/train_dist.png")
+                       f"./screen_shot/resnet50/{current_timestamp}/train_dist.png")
 
 plot_class_distribution(Counter(validation_data.classes),
                        "Validation Set Class Distribution",
-                       f"./screen_shot/{current_timestamp}/val_dist.png")
+                       f"./screen_shot/resnet50/{current_timestamp}/val_dist.png")
 
 plot_class_distribution(Counter(testing_data.classes),
                        "Testing Set Class Distribution",
-                       f"./screen_shot/{current_timestamp}/test_dist.png")
+                       f"./screen_shot/resnet50/{current_timestamp}/test_dist.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -164,10 +164,10 @@ original_image = batch_images[0]
 # NOTE: Hiển thị ảnh gốc trước khi Augmentation
 plt.figure(figsize=(3, 3))
 plt.imshow(original_image)
-plt.title("Ảnh Gốc (Đã Rescale)")
+plt.title("Original Image (Rescaled)")
 plt.axis("off")
 plt.tight_layout()
-plt.savefig(f"./screen_shot/{current_timestamp}/original_image.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/original_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -178,11 +178,11 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     augmented_image = np.clip(augmented_image, 0, 1)  # Đảm bảo giá trị nằm trong [0, 1]
     plt.subplot(2, 3, i + 1)
     plt.imshow(augmented_image)  # Lấy ảnh đầu tiên trong batch mới
-    plt.title(f"Ảnh Augmentation {i+1}")
+    plt.title(f"Image Augmentation {i+1}")
     plt.axis("off")
 
 plt.tight_layout()
-plt.savefig(f"./screen_shot/{current_timestamp}/augmented_image.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/augmented_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -301,7 +301,7 @@ reduce_lr = ReduceLROnPlateau(
 
 # NOTE: TensorBoard - Visualize quá trình training
 tensorboard = TensorBoard(
-    log_dir="./logs", # Thư mục lưu log
+    log_dir="./logs/resnet50", # Thư mục lưu log
     histogram_freq=1, # Log histograms mỗi epoch
     update_freq="epoch", # Cập nhật log theo: epoch hoặc sau mỗi batch
     write_graph=True, # Hiển thị graph model trong TensorBoard (ảnh hưởng performance)
@@ -309,7 +309,7 @@ tensorboard = TensorBoard(
 )
 
 # NOTE: CSVLogger - Lưu log training ra file CSV
-log_filename = f"./logs/training_log_{current_timestamp}.csv"
+log_filename = f"./logs/resnet50/training_log_{current_timestamp}.csv"
 
 csv_logger = CSVLogger(
     filename= log_filename, # Tên file CSV output
@@ -346,37 +346,81 @@ history = MODEL_RESNET50.fit(
 #  Hiển thị mối tương quan giữa loss và val_loss (hình bên phải)
 acc = history.history["accuracy"]
 val_acc = history.history["val_accuracy"]
-
 loss = history.history["loss"]
 val_loss = history.history["val_loss"]
 
+# Tìm index của epoch có val_loss nhỏ nhất
+best_epoch = np.argmin(val_loss)
+
+# Lấy giá trị cuối cùng từ history
+best_train_acc = acc[best_epoch] * 100
+best_val_acc = val_acc[best_epoch] * 100
+best_train_loss = loss[best_epoch]
+best_val_loss = val_loss[best_epoch]
+
+# Tạo text hiển thị các giá trị
+text_acc = f"Train: {best_train_acc:.2f}%\nVal: {best_val_acc:.2f}%"
+text_loss = f"Train: {best_train_loss:.4f}\nVal: {best_val_loss:.4f}"
+
 epochs_range = range(len(acc))
 
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(12, 8))
 
 # Biểu đồ phụ đầu tiên (bên trái): Training and Validation Accuracy
 plt.subplot(1, 2, 1)
 plt.plot(epochs_range, acc, label="Training Accuracy")
 plt.plot(epochs_range, val_acc, label="Validation Accuracy")
+# Thêm marker cho điểm best epoch
+plt.scatter(best_epoch, acc[best_epoch], marker="o", s=100, color="blue", zorder=5,
+           edgecolors="black", linewidths=1, label=f"Best Epoch ({best_epoch+1})")
+plt.scatter(best_epoch, val_acc[best_epoch], marker="o", s=100, color="orange", zorder=5,
+           edgecolors="black", linewidths=1)
 plt.legend(loc="lower right")
 plt.title("Training and Validation Accuracy")
-plt.xlabel("Actual Epochs")
+plt.xlabel("Epochs")
 plt.ylabel("Accuracy")
+plt.text(0.98, 0.5, text_acc, transform=plt.gca().transAxes,
+         ha="right", va="center", fontsize=10,
+         bbox=dict(facecolor="white", alpha=0.8, boxstyle="round,pad=0.3"))
 
 # Biểu đồ phụ đầu tiên (bên phải): Training and Validation Loss
 plt.subplot(1, 2, 2)
 plt.plot(epochs_range, loss, label="Train Loss")
 plt.plot(epochs_range, val_loss, label="Validation Loss")
+# Thêm marker cho điểm best epoch
+plt.scatter(best_epoch, loss[best_epoch], marker="o", s=100, color="blue", zorder=5,
+           edgecolors="black", linewidths=1, label=f"Best Epoch ({best_epoch+1})")
+plt.scatter(best_epoch, val_loss[best_epoch], marker="o", s=100, color="orange", zorder=5,
+           edgecolors="black", linewidths=1)
 plt.legend(loc="upper right")
 plt.title("Training and Validation Loss")
-plt.xlabel("Actual Epochs")
+plt.xlabel("Epochs")
 plt.ylabel("Loss")
+plt.text(0.98, 0.5, text_loss, transform=plt.gca().transAxes,
+         ha="right", va="center", fontsize=10,
+         bbox=dict(facecolor="white", alpha=0.8, boxstyle="round,pad=0.3"))
 
 # Điều chỉnh bố cục để tránh chồng chéo
-plt.tight_layout()
+plt.tight_layout(pad=3)
+# plt.subplots_adjust(bottom=0.25)  # Tăng khoảng trống phía dưới lên 25%
+
+# Thêm subtitle note
+note_text = f"NOTE: Early stopping mechanism was applied, causing the training to end at {len(acc)} epochs rather than continuing to {epochs}."
+plt.figtext(
+    0.5, 0.01,
+    note_text,
+    ha="center",
+    va="bottom",
+    fontsize=10,
+    style="italic",
+    bbox=dict(facecolor="white", alpha=0.8),
+    wrap=True
+)
+
+plt.suptitle("Model ResNet")
 
 # Save the combined figure with a reasonable name
-plt.savefig(f"./screen_shot/{current_timestamp}/training_metrics.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/training_metrics.png", format="png", dpi=300)
 
 # Hiển thị hình ảnh
 plt.show()
@@ -393,10 +437,35 @@ y_true = testing_data.classes
 
 # NOTE: In ra classification report
 #  zero_division=1 tránh lỗi chia cho 0 khi một lớp không có mẫu nào được dự đoán
-print(classification_report(y_true, y_pred, target_names=testing_data.class_indices.keys(), zero_division=1))
+report = classification_report(y_true, y_pred, target_names=testing_data.class_indices.keys(), zero_division=1)
+print(f"Classification Report:\n{report}")
 
 # In ra confusion matrix
-print(confusion_matrix(y_true, y_pred))
+cm = confusion_matrix(y_true, y_pred)
+print(f"Confusion Matrix: {cm}")
+
+def save_log_as_image(log_text, path):
+    plt.figure(figsize=(12, 8))
+    plt.axis("off")  # Tắt trục
+    plt.text(0.05, 0.95, log_text,
+             fontfamily="monospace",  # Font monospace để căn đều cột
+             fontsize=10,
+             verticalalignment="top") # Căn lề trên
+    plt.tight_layout()
+    plt.savefig(path, format="png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+# Tạo chuỗi log và lưu thành ảnh
+log_content = (
+    f"Model: ResNet\n\n"
+    f"Test Accuracy: {test_acc:.4f}\n\n"
+    f"Classification Report:\n{report}\n\n"
+    f"Confusion Matrix:\n{cm}"
+)
+save_log_as_image(
+    log_content,
+    f"./screen_shot/resnet50/{current_timestamp}/evaluation_log.png"
+)
 
 # NOTE: Biểu đồ Confusion Matrix Heatmap
 #  Đánh giá chi tiết hiệu năng từng lớp, nhận diện lớp nào model hay nhầm lẫn
@@ -407,7 +476,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
                 xticklabels=class_names,
                 yticklabels=class_names,
                 cmap="Blues")
-    plt.title("Confusion Matrix", fontsize=16)
+    plt.title("ResNet: Confusion Matrix", fontsize=16)
     plt.xlabel("Predicted", fontsize=14)
     plt.ylabel("True", fontsize=14)
     plt.xticks(rotation=45, ha="right")
@@ -416,7 +485,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
     plt.close()
 
 class_names = list(testing_data.class_indices.keys())
-plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/{current_timestamp}/confusion_matrix.png")
+plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/resnet50/{current_timestamp}/confusion_matrix.png")
 
 # NOTE: Biểu đồ ROC Curve cho Multi-class
 #  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
@@ -445,10 +514,10 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel("False Positive Rate", fontsize=14)
 plt.ylabel("True Positive Rate", fontsize=14)
-plt.title("ROC Curves for All Classes", fontsize=16)
+plt.title("ResNet: ROC Curves for All Classes", fontsize=16)
 plt.legend(loc="lower right", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/{current_timestamp}/roc_curve.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/roc_curve.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
@@ -466,9 +535,9 @@ for i, idx in enumerate(incorrect_indices[:num_samples]):
     plt.title(f"True: {class_names[y_true[idx]]}\nPred: {class_names[y_pred[idx]]}")
     plt.axis("off")
 
-plt.suptitle("Example of Incorrect Predictions", fontsize=16)
+plt.suptitle("ResNet: Example of Incorrect Predictions", fontsize=16)
 plt.tight_layout()
-plt.savefig(f"./screen_shot/{current_timestamp}/wrong_predictions.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/wrong_predictions.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Precision-Recall cho từng lớp
@@ -481,23 +550,8 @@ for i, color in zip(range(9), colors):
 
 plt.xlabel("Recall", fontsize=14)
 plt.ylabel("Precision", fontsize=14)
-plt.title("Precision-Recall Curves", fontsize=16)
+plt.title("ResNet: Precision-Recall Curves", fontsize=16)
 plt.legend(loc="best", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/{current_timestamp}/precision_recall.png", format="png", dpi=300)
+plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/precision_recall.png", format="png", dpi=300)
 plt.close()
-
-
-# NOTE: Support - Số lượng mẫu thực tế thuộc về mỗi lớp trong tập dữ liệu kiểm tra.
-#  Macro Avg: Trung bình cộng của precision, recall và F1-score trên tất cả các lớp mà không xét đến số lượng mẫu của từng lớp.
-#       Điều này giúp đánh giá mô hình một cách công bằng trên tất cả các lớp, kể cả những lớp có ít mẫu.
-#  Weighted Avg - Trung bình có trọng số của precision, recall và F1-score, trong đó trọng số là số lượng mẫu của từng lớp.
-#       Nó giúp phản ánh độ chính xác của mô hình theo tỷ lệ kích thước của từng lớp.
-#  Learning rate – Tốc độ học là một siêu tham số sử dụng trong việc huấn luyện các mạng nơ ron.
-#       Giá trị của nó là một số dương, thường nằm trong khoảng giữa 0 và 1.
-#       Tốc độ học kiểm soát tốc độ mô hình thay đổi các trọng số để phù hợp với bài toán.
-#       Tốc độ học lớn giúp mạng nơ ron được huấn luyện nhanh hơn nhưng cũng có thể làm giảm độ chính xác.
-#  Trong Deep Learning, việc phân chia dữ liệu thành 3 tập riêng biệt là cực kỳ quan trọng:
-#       Train set: Huấn luyện mô hình.
-#       Validation set: Điều chỉnh siêu tham số (learning rate, số lớp, v.v.) và theo dõi overfitting trong quá trình train.
-#       Test set: Đánh giá cuối cùng một lần duy nhất sau khi mô hình đã hoàn thiện.
