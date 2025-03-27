@@ -31,10 +31,10 @@ if gpus:
     )
 
 # Load mô hình đã huấn luyện
-model = tf.keras.models.load_model("resnet50_saved.keras")
+model = tf.keras.models.load_model("resnet50_saved_2025-03-09_14-16-58.keras")
 
 # Load tên label đã lưu trong file json, nhằm ánh label và index
-with open("class_indices.json", "r") as f:
+with open("resnet_class_indices.json", "r") as f:
     class_indices = json.load(f)
     class_names = list(class_indices.keys())
 
