@@ -3,8 +3,6 @@
 *.keras
 ~$doc.docx
 ~WRL1698.tmp
-flutter_app/android/**/*.png
-flutter_app/ios/**/*.png
 kaggle_dataset
 ref_dataset
 my_dataset/**/*.png
