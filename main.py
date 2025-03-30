@@ -53,7 +53,7 @@ WASTE_CATEGORIES = {
         "classes": ["battery"],
         "disposal": "Chất thải nguy hại. Cần xử lý đặc biệt tại các điểm thu gom chuyên dụng."
     },
-    "other": {
+    "reusable": {
         "classes": ["clothes", "shoes"],
         "disposal": "Đồ dùng có thể tái sử dụng hoặc quyên góp. Nếu hỏng, vui lòng bỏ vào thùng rác chung."
     }
