@@ -2,7 +2,6 @@ import asyncio
 import json
 from io import BytesIO
 from typing import Annotated
-
 import httpx
 import numpy as np
 import tensorflow as tf
@@ -31,7 +30,7 @@ if gpus:
     )
 
 # Load mô hình đã huấn luyện
-model = tf.keras.models.load_model("resnet50_saved_2025-03-09_14-16-58.keras")
+model = tf.keras.models.load_model("efficientnet_saved_2025-04-04_06-07-28.keras")
 
 # Load tên label đã lưu trong file json, nhằm ánh label và index
 with open("resnet_class_indices.json", "r") as f:
@@ -61,9 +60,14 @@ WASTE_CATEGORIES = {
 
 def preprocess_image(image : Image.Image) -> np.ndarray:
     """Tiền xử lý ảnh đầu vào"""
+    # Resize ảnh về kích thước mà mô hình yêu cầu
     image = image.resize((224, 224))
-    image_array = np.array(image) / 255.0
-    return np.expand_dims(image_array, axis=0)
+    # Chuyển ảnh thành mảng numpy với giá trị pixel trong dải [0, 255]
+    image_array = np.array(image)
+    # Áp dụng hàm tiền xử lý của EfficientNet-V2
+    processed_image = tf.keras.applications.efficientnet_v2.preprocess_input(image_array)
+    # Thêm chiều batch (batch_size=1)
+    return np.expand_dims(processed_image, axis=0)
 
 def get_waste_info(predicted_class : str) -> dict:
     """Lấy thông tin phân loại và cách xử lý"""
