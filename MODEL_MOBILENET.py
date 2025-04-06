@@ -45,7 +45,7 @@ test_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/my_dataset/test"
 
 # Data Augmentation
 train_datagen = ImageDataGenerator(
-    preprocessing_function=tf.keras.applications.mobilenet_v2.preprocess_input,
+    preprocessing_function=tf.keras.applications.mobilenet_v2.preprocess_input, # Chuyển RGB -> BGR, Trừ mean ImageNet
     rotation_range=40,
     width_shift_range=0.2,
     height_shift_range=0.2,
@@ -144,15 +144,15 @@ os.makedirs(save_dir, exist_ok=True) # Tạo thư mục nếu chưa tồn tại
 # Vẽ cho cả 3 tập train, validate, test
 plot_class_distribution(Counter(training_data.classes),
                        "Training Set Class Distribution",
-                       f"./screen_shot/mobilenet/{current_timestamp}/train_dist.png")
+                       f"{save_dir}/train_dist.png")
 
 plot_class_distribution(Counter(validation_data.classes),
                        "Validation Set Class Distribution",
-                       f"./screen_shot/mobilenet/{current_timestamp}/val_dist.png")
+                       f"{save_dir}/val_dist.png")
 
 plot_class_distribution(Counter(testing_data.classes),
                        "Testing Set Class Distribution",
-                       f"./screen_shot/mobilenet/{current_timestamp}/test_dist.png")
+                       f"{save_dir}/test_dist.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -166,7 +166,7 @@ plt.imshow(original_image)
 plt.title("Original Image (Rescaled)")
 plt.axis("off")
 plt.tight_layout()
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/original_image.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/original_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -181,14 +181,20 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     plt.axis("off")
 
 plt.tight_layout()
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/augmented_image.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/augmented_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
 # NOTE: Load mô hình MobileNet
 BASE_MODEL = MobileNetV2(input_shape=(224, 224, 3), weights="imagenet", include_top=False, alpha=1.0)
 
-for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
+# NOTE: Fine-tuning - Cho phép huấn luyện lại một phần cuối của MobileNet
+#  Tính số lớp cần fine-tune (20% lớp cuối)
+total_layers = len(BASE_MODEL.layers)
+trainable_layers = int(total_layers * 0.2)
+print(f"Total layers: {total_layers}, Fine-tuning last {trainable_layers} layers")
+
+for layer in BASE_MODEL.layers[-trainable_layers:]:  # NOTE: Fine-tune 20% lớp cuối = 30
     layer.trainable = True
 
 # NOTE: Thêm các lớp mới vào mô hình
@@ -374,7 +380,7 @@ plt.figtext(
 )
 
 # Save the combined figure with a reasonable name
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/training_metrics.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/training_metrics.png", format="png", dpi=300)
 
 # Hiển thị hình ảnh
 plt.show()
@@ -418,7 +424,7 @@ log_content = (
 )
 save_log_as_image(
     log_content,
-    f"./screen_shot/mobilenet/{current_timestamp}/evaluation_log.png"
+    f"{save_dir}/evaluation_log.png"
 )
 
 # NOTE: Biểu đồ Confusion Matrix Heatmap
@@ -439,7 +445,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
     plt.close()
 
 class_names = list(testing_data.class_indices.keys())
-plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/mobilenet/{current_timestamp}/confusion_matrix.png")
+plot_confusion_matrix(y_true, y_pred, class_names,f"{save_dir}/confusion_matrix.png")
 
 # NOTE: Biểu đồ ROC Curve cho Multi-class
 #  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
@@ -471,7 +477,7 @@ plt.ylabel("True Positive Rate", fontsize=14)
 plt.title("MobileNet: ROC Curves for All Classes", fontsize=16)
 plt.legend(loc="lower right", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/roc_curve.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/roc_curve.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
@@ -491,7 +497,7 @@ for i, idx in enumerate(incorrect_indices[:num_samples]):
 
 plt.suptitle("MobileNet: Example of Incorrect Predictions", fontsize=16)
 plt.tight_layout()
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/wrong_predictions.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/wrong_predictions.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Precision-Recall cho từng lớp
@@ -507,5 +513,5 @@ plt.ylabel("Precision", fontsize=14)
 plt.title("MobileNet: Precision-Recall Curves", fontsize=16)
 plt.legend(loc="best", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/mobilenet/{current_timestamp}/precision_recall.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/precision_recall.png", format="png", dpi=300)
 plt.close()

@@ -45,7 +45,7 @@ test_path = "D:/Study/CNTT/A.MHUD/CNN_Practice/my_dataset/test"
 
 # Data Augmentation
 train_datagen = ImageDataGenerator(
-    rescale=1.0/255, # Chuẩn hoá về [0, 1]
+    preprocessing_function=tf.keras.applications.resnet50.preprocess_input, # Chuyển ảnh từ RGB sang BGR, trừ đi mean của ImageNet (tính trên dải 0-255)
     rotation_range=40, # Xoay một góc 40 độ
     width_shift_range=0.2, # Di chuyển hình ảnh theo chiều ngang (trái hoặc phải) với một phạm vi tối đa là 20% so với chiều rộng của hình ảnh.
     height_shift_range=0.2, # Di chuyển hình ảnh theo chiều dọc (lên hoặc xuống) với một phạm vi tối đa là 20% so với chiều cao của hình ảnh.
@@ -59,7 +59,7 @@ train_datagen = ImageDataGenerator(
 
 # Chỉ áp dụng augmentation cho tập train, tập test CHỈ rescale. Nếu không sẽ gây nhiễu dữ liệu và làm sai lệch kết quả đánh giá.
 test_datagen = ImageDataGenerator(
-    rescale=1.0/255,
+    preprocessing_function=tf.keras.applications.resnet50.preprocess_input,
 )
 
 # Tạo training dataset từ thư mục
@@ -145,15 +145,15 @@ os.makedirs(save_dir, exist_ok=True) # Tạo thư mục nếu chưa tồn tại
 # Vẽ cho cả 3 tập train, validate, test
 plot_class_distribution(Counter(training_data.classes),
                        "Training Set Class Distribution",
-                       f"./screen_shot/resnet50/{current_timestamp}/train_dist.png")
+                       f"{save_dir}/train_dist.png")
 
 plot_class_distribution(Counter(validation_data.classes),
                        "Validation Set Class Distribution",
-                       f"./screen_shot/resnet50/{current_timestamp}/val_dist.png")
+                       f"{save_dir}/val_dist.png")
 
 plot_class_distribution(Counter(testing_data.classes),
                        "Testing Set Class Distribution",
-                       f"./screen_shot/resnet50/{current_timestamp}/test_dist.png")
+                       f"{save_dir}/test_dist.png")
 
 # Lấy một batch từ training_data
 batch_images, batch_labels = next(training_data)
@@ -167,7 +167,7 @@ plt.imshow(original_image)
 plt.title("Original Image (Rescaled)")
 plt.axis("off")
 plt.tight_layout()
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/original_image.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/original_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -182,7 +182,7 @@ for i in range(6):  # Hiển thị 6 ảnh đã biến đổi
     plt.axis("off")
 
 plt.tight_layout()
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/augmented_image.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/augmented_image.png", format="png", dpi=300)
 plt.show()
 plt.close()
 
@@ -191,6 +191,12 @@ plt.close()
 #  2. weights="imagenet": Sử dụng trọng số đã được huấn luyện sẵn trên tập ImageNet.
 #  3. include_top=False: Không sử dụng phần Fully Connected Layer gốc của ResNet50 (vì ta sẽ thay bằng lớp FC riêng).
 BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights="imagenet", include_top=False)
+
+# NOTE: Fine-tuning - Cho phép huấn luyện lại một phần cuối của ResNet50
+#  Tính số lớp cần fine-tune (20% lớp cuối)
+total_layers = len(BASE_MODEL.layers)
+trainable_layers = int(total_layers * 0.2)
+print(f"Total layers: {total_layers}, Fine-tuning last {trainable_layers} layers")
 
 # NOTE: Fine-tuning - Cho phép huấn luyện lại các lớp cuối của ResNet50
 #  1. Là quá trình tiếp tục huấn luyện một mô hình đã được huấn luyện trước bằng cách điều chỉnh một số lớp cụ thể thay vì huấn luyện từ đầu.
@@ -201,7 +207,7 @@ BASE_MODEL = ResNet50(input_shape=(224, 224, 3), weights="imagenet", include_top
 #  4. Các lớp sâu trong CNN học các đặc trưng tổng quát (ví dụ: cạnh, hình dạng),
 #       trong khi các lớp cuối học đặc trưng cụ thể cho bài toán (ví dụ: hình dạng đối tượng).
 #       Fine-tuning giúp tối ưu hóa các đặc trưng này.
-for layer in BASE_MODEL.layers[-50:]:  # NOTE: Fine-tune 50 lớp cuối
+for layer in BASE_MODEL.layers[-trainable_layers:]:  # NOTE: Fine-tune 20% lớp cuối = 35
     layer.trainable = True
 
 # NOTE: Thêm các lớp mới vào mô hình
@@ -420,7 +426,7 @@ plt.figtext(
 plt.suptitle("Model ResNet")
 
 # Save the combined figure with a reasonable name
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/training_metrics.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/training_metrics.png", format="png", dpi=300)
 
 # Hiển thị hình ảnh
 plt.show()
@@ -464,7 +470,7 @@ log_content = (
 )
 save_log_as_image(
     log_content,
-    f"./screen_shot/resnet50/{current_timestamp}/evaluation_log.png"
+    f"{save_dir}/evaluation_log.png"
 )
 
 # NOTE: Biểu đồ Confusion Matrix Heatmap
@@ -485,7 +491,7 @@ def plot_confusion_matrix(true, predict, class_names, path):
     plt.close()
 
 class_names = list(testing_data.class_indices.keys())
-plot_confusion_matrix(y_true, y_pred, class_names,f"./screen_shot/resnet50/{current_timestamp}/confusion_matrix.png")
+plot_confusion_matrix(y_true, y_pred, class_names,f"{save_dir}/confusion_matrix.png")
 
 # NOTE: Biểu đồ ROC Curve cho Multi-class
 #  Đánh giá khả năng phân loại ở các ngưỡng khác nhau, AUC càng gần 1 càng tốt
@@ -517,7 +523,7 @@ plt.ylabel("True Positive Rate", fontsize=14)
 plt.title("ResNet: ROC Curves for All Classes", fontsize=16)
 plt.legend(loc="lower right", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/roc_curve.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/roc_curve.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Ví dụ Dự đoán Đúng/Sai
@@ -537,7 +543,7 @@ for i, idx in enumerate(incorrect_indices[:num_samples]):
 
 plt.suptitle("ResNet: Example of Incorrect Predictions", fontsize=16)
 plt.tight_layout()
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/wrong_predictions.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/wrong_predictions.png", format="png", dpi=300)
 plt.close()
 
 # NOTE: Biểu đồ Precision-Recall cho từng lớp
@@ -553,5 +559,5 @@ plt.ylabel("Precision", fontsize=14)
 plt.title("ResNet: Precision-Recall Curves", fontsize=16)
 plt.legend(loc="best", prop={"size": 8})
 plt.tight_layout()
-plt.savefig(f"./screen_shot/resnet50/{current_timestamp}/precision_recall.png", format="png", dpi=300)
+plt.savefig(f"{save_dir}/precision_recall.png", format="png", dpi=300)
 plt.close()
