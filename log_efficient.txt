@@ -859,3 +859,961 @@ Confusion Matrix: [[ 381    0    0    0    7    0    0    1    1]
 
 Process finished with exit code 0
 
+27-03-2025-04-04
+"C:\Program Files\Python310\python.exe" D:\Study\CNTT\A.MHUD\CNN_Practice\MODEL_EFFICIENTNET.py
+GPU available: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+TensorFlow is using GPU: True
+2025-04-04 06:07:27.551402: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX AVX2
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+1 Physical GPU, 1 Logical GPUs
+2025-04-04 06:07:28.025226: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1532] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 8192 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050 Ti Laptop GPU, pci bus id: 0000:01:00.0, compute capability: 8.6
+Found 11792 images belonging to 9 classes.
+Found 2944 images belonging to 9 classes.
+Found 3680 images belonging to 9 classes.
+Training class distribution: Counter({2: 3222, 3: 1285, 7: 1270, 8: 1265, 5: 1165, 6: 992, 1: 890, 4: 871, 0: 832})
+Validation class distribution: Counter({2: 805, 3: 321, 7: 317, 8: 316, 5: 291, 6: 247, 1: 222, 4: 217, 0: 208})
+Testing class distribution: Counter({2: 1006, 3: 401, 7: 396, 8: 395, 5: 363, 6: 309, 1: 278, 4: 272, 0: 260})
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [0.0..255.0].
+Total layers: 238, Fine-tuning last 47 layers
+Model: "model"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to
+==================================================================================================
+ input_1 (InputLayer)           [(None, 224, 224, 3  0           []
+                                )]
+
+ rescaling (Rescaling)          (None, 224, 224, 3)  0           ['input_1[0][0]']
+
+ normalization (Normalization)  (None, 224, 224, 3)  7           ['rescaling[0][0]']
+
+ tf.math.truediv (TFOpLambda)   (None, 224, 224, 3)  0           ['normalization[0][0]']
+
+ stem_conv_pad (ZeroPadding2D)  (None, 225, 225, 3)  0           ['tf.math.truediv[0][0]']
+
+ stem_conv (Conv2D)             (None, 112, 112, 32  864         ['stem_conv_pad[0][0]']
+                                )
+
+ stem_bn (BatchNormalization)   (None, 112, 112, 32  128         ['stem_conv[0][0]']
+                                )
+
+ stem_activation (Activation)   (None, 112, 112, 32  0           ['stem_bn[0][0]']
+                                )
+
+ block1a_dwconv (DepthwiseConv2  (None, 112, 112, 32  288        ['stem_activation[0][0]']
+ D)                             )
+
+ block1a_bn (BatchNormalization  (None, 112, 112, 32  128        ['block1a_dwconv[0][0]']
+ )                              )
+
+ block1a_activation (Activation  (None, 112, 112, 32  0          ['block1a_bn[0][0]']
+ )                              )
+
+ block1a_se_squeeze (GlobalAver  (None, 32)          0           ['block1a_activation[0][0]']
+ agePooling2D)
+
+ block1a_se_reshape (Reshape)   (None, 1, 1, 32)     0           ['block1a_se_squeeze[0][0]']
+
+ block1a_se_reduce (Conv2D)     (None, 1, 1, 8)      264         ['block1a_se_reshape[0][0]']
+
+ block1a_se_expand (Conv2D)     (None, 1, 1, 32)     288         ['block1a_se_reduce[0][0]']
+
+ block1a_se_excite (Multiply)   (None, 112, 112, 32  0           ['block1a_activation[0][0]',
+                                )                                 'block1a_se_expand[0][0]']
+
+ block1a_project_conv (Conv2D)  (None, 112, 112, 16  512         ['block1a_se_excite[0][0]']
+                                )
+
+ block1a_project_bn (BatchNorma  (None, 112, 112, 16  64         ['block1a_project_conv[0][0]']
+ lization)                      )
+
+ block2a_expand_conv (Conv2D)   (None, 112, 112, 96  1536        ['block1a_project_bn[0][0]']
+                                )
+
+ block2a_expand_bn (BatchNormal  (None, 112, 112, 96  384        ['block2a_expand_conv[0][0]']
+ ization)                       )
+
+ block2a_expand_activation (Act  (None, 112, 112, 96  0          ['block2a_expand_bn[0][0]']
+ ivation)                       )
+
+ block2a_dwconv_pad (ZeroPaddin  (None, 113, 113, 96  0          ['block2a_expand_activation[0][0]
+ g2D)                           )                                ']
+
+ block2a_dwconv (DepthwiseConv2  (None, 56, 56, 96)  864         ['block2a_dwconv_pad[0][0]']
+ D)
+
+ block2a_bn (BatchNormalization  (None, 56, 56, 96)  384         ['block2a_dwconv[0][0]']
+ )
+
+ block2a_activation (Activation  (None, 56, 56, 96)  0           ['block2a_bn[0][0]']
+ )
+
+ block2a_se_squeeze (GlobalAver  (None, 96)          0           ['block2a_activation[0][0]']
+ agePooling2D)
+
+ block2a_se_reshape (Reshape)   (None, 1, 1, 96)     0           ['block2a_se_squeeze[0][0]']
+
+ block2a_se_reduce (Conv2D)     (None, 1, 1, 4)      388         ['block2a_se_reshape[0][0]']
+
+ block2a_se_expand (Conv2D)     (None, 1, 1, 96)     480         ['block2a_se_reduce[0][0]']
+
+ block2a_se_excite (Multiply)   (None, 56, 56, 96)   0           ['block2a_activation[0][0]',
+                                                                  'block2a_se_expand[0][0]']
+
+ block2a_project_conv (Conv2D)  (None, 56, 56, 24)   2304        ['block2a_se_excite[0][0]']
+
+ block2a_project_bn (BatchNorma  (None, 56, 56, 24)  96          ['block2a_project_conv[0][0]']
+ lization)
+
+ block2b_expand_conv (Conv2D)   (None, 56, 56, 144)  3456        ['block2a_project_bn[0][0]']
+
+ block2b_expand_bn (BatchNormal  (None, 56, 56, 144)  576        ['block2b_expand_conv[0][0]']
+ ization)
+
+ block2b_expand_activation (Act  (None, 56, 56, 144)  0          ['block2b_expand_bn[0][0]']
+ ivation)
+
+ block2b_dwconv (DepthwiseConv2  (None, 56, 56, 144)  1296       ['block2b_expand_activation[0][0]
+ D)                                                              ']
+
+ block2b_bn (BatchNormalization  (None, 56, 56, 144)  576        ['block2b_dwconv[0][0]']
+ )
+
+ block2b_activation (Activation  (None, 56, 56, 144)  0          ['block2b_bn[0][0]']
+ )
+
+ block2b_se_squeeze (GlobalAver  (None, 144)         0           ['block2b_activation[0][0]']
+ agePooling2D)
+
+ block2b_se_reshape (Reshape)   (None, 1, 1, 144)    0           ['block2b_se_squeeze[0][0]']
+
+ block2b_se_reduce (Conv2D)     (None, 1, 1, 6)      870         ['block2b_se_reshape[0][0]']
+
+ block2b_se_expand (Conv2D)     (None, 1, 1, 144)    1008        ['block2b_se_reduce[0][0]']
+
+ block2b_se_excite (Multiply)   (None, 56, 56, 144)  0           ['block2b_activation[0][0]',
+                                                                  'block2b_se_expand[0][0]']
+
+ block2b_project_conv (Conv2D)  (None, 56, 56, 24)   3456        ['block2b_se_excite[0][0]']
+
+ block2b_project_bn (BatchNorma  (None, 56, 56, 24)  96          ['block2b_project_conv[0][0]']
+ lization)
+
+ block2b_drop (Dropout)         (None, 56, 56, 24)   0           ['block2b_project_bn[0][0]']
+
+ block2b_add (Add)              (None, 56, 56, 24)   0           ['block2b_drop[0][0]',
+                                                                  'block2a_project_bn[0][0]']
+
+ block3a_expand_conv (Conv2D)   (None, 56, 56, 144)  3456        ['block2b_add[0][0]']
+
+ block3a_expand_bn (BatchNormal  (None, 56, 56, 144)  576        ['block3a_expand_conv[0][0]']
+ ization)
+
+ block3a_expand_activation (Act  (None, 56, 56, 144)  0          ['block3a_expand_bn[0][0]']
+ ivation)
+
+ block3a_dwconv_pad (ZeroPaddin  (None, 59, 59, 144)  0          ['block3a_expand_activation[0][0]
+ g2D)                                                            ']
+
+ block3a_dwconv (DepthwiseConv2  (None, 28, 28, 144)  3600       ['block3a_dwconv_pad[0][0]']
+ D)
+
+ block3a_bn (BatchNormalization  (None, 28, 28, 144)  576        ['block3a_dwconv[0][0]']
+ )
+
+ block3a_activation (Activation  (None, 28, 28, 144)  0          ['block3a_bn[0][0]']
+ )
+
+ block3a_se_squeeze (GlobalAver  (None, 144)         0           ['block3a_activation[0][0]']
+ agePooling2D)
+
+ block3a_se_reshape (Reshape)   (None, 1, 1, 144)    0           ['block3a_se_squeeze[0][0]']
+
+ block3a_se_reduce (Conv2D)     (None, 1, 1, 6)      870         ['block3a_se_reshape[0][0]']
+
+ block3a_se_expand (Conv2D)     (None, 1, 1, 144)    1008        ['block3a_se_reduce[0][0]']
+
+ block3a_se_excite (Multiply)   (None, 28, 28, 144)  0           ['block3a_activation[0][0]',
+                                                                  'block3a_se_expand[0][0]']
+
+ block3a_project_conv (Conv2D)  (None, 28, 28, 40)   5760        ['block3a_se_excite[0][0]']
+
+ block3a_project_bn (BatchNorma  (None, 28, 28, 40)  160         ['block3a_project_conv[0][0]']
+ lization)
+
+ block3b_expand_conv (Conv2D)   (None, 28, 28, 240)  9600        ['block3a_project_bn[0][0]']
+
+ block3b_expand_bn (BatchNormal  (None, 28, 28, 240)  960        ['block3b_expand_conv[0][0]']
+ ization)
+
+ block3b_expand_activation (Act  (None, 28, 28, 240)  0          ['block3b_expand_bn[0][0]']
+ ivation)
+
+ block3b_dwconv (DepthwiseConv2  (None, 28, 28, 240)  6000       ['block3b_expand_activation[0][0]
+ D)                                                              ']
+
+ block3b_bn (BatchNormalization  (None, 28, 28, 240)  960        ['block3b_dwconv[0][0]']
+ )
+
+ block3b_activation (Activation  (None, 28, 28, 240)  0          ['block3b_bn[0][0]']
+ )
+
+ block3b_se_squeeze (GlobalAver  (None, 240)         0           ['block3b_activation[0][0]']
+ agePooling2D)
+
+ block3b_se_reshape (Reshape)   (None, 1, 1, 240)    0           ['block3b_se_squeeze[0][0]']
+
+ block3b_se_reduce (Conv2D)     (None, 1, 1, 10)     2410        ['block3b_se_reshape[0][0]']
+
+ block3b_se_expand (Conv2D)     (None, 1, 1, 240)    2640        ['block3b_se_reduce[0][0]']
+
+ block3b_se_excite (Multiply)   (None, 28, 28, 240)  0           ['block3b_activation[0][0]',
+                                                                  'block3b_se_expand[0][0]']
+
+ block3b_project_conv (Conv2D)  (None, 28, 28, 40)   9600        ['block3b_se_excite[0][0]']
+
+ block3b_project_bn (BatchNorma  (None, 28, 28, 40)  160         ['block3b_project_conv[0][0]']
+ lization)
+
+ block3b_drop (Dropout)         (None, 28, 28, 40)   0           ['block3b_project_bn[0][0]']
+
+ block3b_add (Add)              (None, 28, 28, 40)   0           ['block3b_drop[0][0]',
+                                                                  'block3a_project_bn[0][0]']
+
+ block4a_expand_conv (Conv2D)   (None, 28, 28, 240)  9600        ['block3b_add[0][0]']
+
+ block4a_expand_bn (BatchNormal  (None, 28, 28, 240)  960        ['block4a_expand_conv[0][0]']
+ ization)
+
+ block4a_expand_activation (Act  (None, 28, 28, 240)  0          ['block4a_expand_bn[0][0]']
+ ivation)
+
+ block4a_dwconv_pad (ZeroPaddin  (None, 29, 29, 240)  0          ['block4a_expand_activation[0][0]
+ g2D)                                                            ']
+
+ block4a_dwconv (DepthwiseConv2  (None, 14, 14, 240)  2160       ['block4a_dwconv_pad[0][0]']
+ D)
+
+ block4a_bn (BatchNormalization  (None, 14, 14, 240)  960        ['block4a_dwconv[0][0]']
+ )
+
+ block4a_activation (Activation  (None, 14, 14, 240)  0          ['block4a_bn[0][0]']
+ )
+
+ block4a_se_squeeze (GlobalAver  (None, 240)         0           ['block4a_activation[0][0]']
+ agePooling2D)
+
+ block4a_se_reshape (Reshape)   (None, 1, 1, 240)    0           ['block4a_se_squeeze[0][0]']
+
+ block4a_se_reduce (Conv2D)     (None, 1, 1, 10)     2410        ['block4a_se_reshape[0][0]']
+
+ block4a_se_expand (Conv2D)     (None, 1, 1, 240)    2640        ['block4a_se_reduce[0][0]']
+
+ block4a_se_excite (Multiply)   (None, 14, 14, 240)  0           ['block4a_activation[0][0]',
+                                                                  'block4a_se_expand[0][0]']
+
+ block4a_project_conv (Conv2D)  (None, 14, 14, 80)   19200       ['block4a_se_excite[0][0]']
+
+ block4a_project_bn (BatchNorma  (None, 14, 14, 80)  320         ['block4a_project_conv[0][0]']
+ lization)
+
+ block4b_expand_conv (Conv2D)   (None, 14, 14, 480)  38400       ['block4a_project_bn[0][0]']
+
+ block4b_expand_bn (BatchNormal  (None, 14, 14, 480)  1920       ['block4b_expand_conv[0][0]']
+ ization)
+
+ block4b_expand_activation (Act  (None, 14, 14, 480)  0          ['block4b_expand_bn[0][0]']
+ ivation)
+
+ block4b_dwconv (DepthwiseConv2  (None, 14, 14, 480)  4320       ['block4b_expand_activation[0][0]
+ D)                                                              ']
+
+ block4b_bn (BatchNormalization  (None, 14, 14, 480)  1920       ['block4b_dwconv[0][0]']
+ )
+
+ block4b_activation (Activation  (None, 14, 14, 480)  0          ['block4b_bn[0][0]']
+ )
+
+ block4b_se_squeeze (GlobalAver  (None, 480)         0           ['block4b_activation[0][0]']
+ agePooling2D)
+
+ block4b_se_reshape (Reshape)   (None, 1, 1, 480)    0           ['block4b_se_squeeze[0][0]']
+
+ block4b_se_reduce (Conv2D)     (None, 1, 1, 20)     9620        ['block4b_se_reshape[0][0]']
+
+ block4b_se_expand (Conv2D)     (None, 1, 1, 480)    10080       ['block4b_se_reduce[0][0]']
+
+ block4b_se_excite (Multiply)   (None, 14, 14, 480)  0           ['block4b_activation[0][0]',
+                                                                  'block4b_se_expand[0][0]']
+
+ block4b_project_conv (Conv2D)  (None, 14, 14, 80)   38400       ['block4b_se_excite[0][0]']
+
+ block4b_project_bn (BatchNorma  (None, 14, 14, 80)  320         ['block4b_project_conv[0][0]']
+ lization)
+
+ block4b_drop (Dropout)         (None, 14, 14, 80)   0           ['block4b_project_bn[0][0]']
+
+ block4b_add (Add)              (None, 14, 14, 80)   0           ['block4b_drop[0][0]',
+                                                                  'block4a_project_bn[0][0]']
+
+ block4c_expand_conv (Conv2D)   (None, 14, 14, 480)  38400       ['block4b_add[0][0]']
+
+ block4c_expand_bn (BatchNormal  (None, 14, 14, 480)  1920       ['block4c_expand_conv[0][0]']
+ ization)
+
+ block4c_expand_activation (Act  (None, 14, 14, 480)  0          ['block4c_expand_bn[0][0]']
+ ivation)
+
+ block4c_dwconv (DepthwiseConv2  (None, 14, 14, 480)  4320       ['block4c_expand_activation[0][0]
+ D)                                                              ']
+
+ block4c_bn (BatchNormalization  (None, 14, 14, 480)  1920       ['block4c_dwconv[0][0]']
+ )
+
+ block4c_activation (Activation  (None, 14, 14, 480)  0          ['block4c_bn[0][0]']
+ )
+
+ block4c_se_squeeze (GlobalAver  (None, 480)         0           ['block4c_activation[0][0]']
+ agePooling2D)
+
+ block4c_se_reshape (Reshape)   (None, 1, 1, 480)    0           ['block4c_se_squeeze[0][0]']
+
+ block4c_se_reduce (Conv2D)     (None, 1, 1, 20)     9620        ['block4c_se_reshape[0][0]']
+
+ block4c_se_expand (Conv2D)     (None, 1, 1, 480)    10080       ['block4c_se_reduce[0][0]']
+
+ block4c_se_excite (Multiply)   (None, 14, 14, 480)  0           ['block4c_activation[0][0]',
+                                                                  'block4c_se_expand[0][0]']
+
+ block4c_project_conv (Conv2D)  (None, 14, 14, 80)   38400       ['block4c_se_excite[0][0]']
+
+ block4c_project_bn (BatchNorma  (None, 14, 14, 80)  320         ['block4c_project_conv[0][0]']
+ lization)
+
+ block4c_drop (Dropout)         (None, 14, 14, 80)   0           ['block4c_project_bn[0][0]']
+
+ block4c_add (Add)              (None, 14, 14, 80)   0           ['block4c_drop[0][0]',
+                                                                  'block4b_add[0][0]']
+
+ block5a_expand_conv (Conv2D)   (None, 14, 14, 480)  38400       ['block4c_add[0][0]']
+
+ block5a_expand_bn (BatchNormal  (None, 14, 14, 480)  1920       ['block5a_expand_conv[0][0]']
+ ization)
+
+ block5a_expand_activation (Act  (None, 14, 14, 480)  0          ['block5a_expand_bn[0][0]']
+ ivation)
+
+ block5a_dwconv (DepthwiseConv2  (None, 14, 14, 480)  12000      ['block5a_expand_activation[0][0]
+ D)                                                              ']
+
+ block5a_bn (BatchNormalization  (None, 14, 14, 480)  1920       ['block5a_dwconv[0][0]']
+ )
+
+ block5a_activation (Activation  (None, 14, 14, 480)  0          ['block5a_bn[0][0]']
+ )
+
+ block5a_se_squeeze (GlobalAver  (None, 480)         0           ['block5a_activation[0][0]']
+ agePooling2D)
+
+ block5a_se_reshape (Reshape)   (None, 1, 1, 480)    0           ['block5a_se_squeeze[0][0]']
+
+ block5a_se_reduce (Conv2D)     (None, 1, 1, 20)     9620        ['block5a_se_reshape[0][0]']
+
+ block5a_se_expand (Conv2D)     (None, 1, 1, 480)    10080       ['block5a_se_reduce[0][0]']
+
+ block5a_se_excite (Multiply)   (None, 14, 14, 480)  0           ['block5a_activation[0][0]',
+                                                                  'block5a_se_expand[0][0]']
+
+ block5a_project_conv (Conv2D)  (None, 14, 14, 112)  53760       ['block5a_se_excite[0][0]']
+
+ block5a_project_bn (BatchNorma  (None, 14, 14, 112)  448        ['block5a_project_conv[0][0]']
+ lization)
+
+ block5b_expand_conv (Conv2D)   (None, 14, 14, 672)  75264       ['block5a_project_bn[0][0]']
+
+ block5b_expand_bn (BatchNormal  (None, 14, 14, 672)  2688       ['block5b_expand_conv[0][0]']
+ ization)
+
+ block5b_expand_activation (Act  (None, 14, 14, 672)  0          ['block5b_expand_bn[0][0]']
+ ivation)
+
+ block5b_dwconv (DepthwiseConv2  (None, 14, 14, 672)  16800      ['block5b_expand_activation[0][0]
+ D)                                                              ']
+
+ block5b_bn (BatchNormalization  (None, 14, 14, 672)  2688       ['block5b_dwconv[0][0]']
+ )
+
+ block5b_activation (Activation  (None, 14, 14, 672)  0          ['block5b_bn[0][0]']
+ )
+
+ block5b_se_squeeze (GlobalAver  (None, 672)         0           ['block5b_activation[0][0]']
+ agePooling2D)
+
+ block5b_se_reshape (Reshape)   (None, 1, 1, 672)    0           ['block5b_se_squeeze[0][0]']
+
+ block5b_se_reduce (Conv2D)     (None, 1, 1, 28)     18844       ['block5b_se_reshape[0][0]']
+
+ block5b_se_expand (Conv2D)     (None, 1, 1, 672)    19488       ['block5b_se_reduce[0][0]']
+
+ block5b_se_excite (Multiply)   (None, 14, 14, 672)  0           ['block5b_activation[0][0]',
+                                                                  'block5b_se_expand[0][0]']
+
+ block5b_project_conv (Conv2D)  (None, 14, 14, 112)  75264       ['block5b_se_excite[0][0]']
+
+ block5b_project_bn (BatchNorma  (None, 14, 14, 112)  448        ['block5b_project_conv[0][0]']
+ lization)
+
+ block5b_drop (Dropout)         (None, 14, 14, 112)  0           ['block5b_project_bn[0][0]']
+
+ block5b_add (Add)              (None, 14, 14, 112)  0           ['block5b_drop[0][0]',
+                                                                  'block5a_project_bn[0][0]']
+
+ block5c_expand_conv (Conv2D)   (None, 14, 14, 672)  75264       ['block5b_add[0][0]']
+
+ block5c_expand_bn (BatchNormal  (None, 14, 14, 672)  2688       ['block5c_expand_conv[0][0]']
+ ization)
+
+ block5c_expand_activation (Act  (None, 14, 14, 672)  0          ['block5c_expand_bn[0][0]']
+ ivation)
+
+ block5c_dwconv (DepthwiseConv2  (None, 14, 14, 672)  16800      ['block5c_expand_activation[0][0]
+ D)                                                              ']
+
+ block5c_bn (BatchNormalization  (None, 14, 14, 672)  2688       ['block5c_dwconv[0][0]']
+ )
+
+ block5c_activation (Activation  (None, 14, 14, 672)  0          ['block5c_bn[0][0]']
+ )
+
+ block5c_se_squeeze (GlobalAver  (None, 672)         0           ['block5c_activation[0][0]']
+ agePooling2D)
+
+ block5c_se_reshape (Reshape)   (None, 1, 1, 672)    0           ['block5c_se_squeeze[0][0]']
+
+ block5c_se_reduce (Conv2D)     (None, 1, 1, 28)     18844       ['block5c_se_reshape[0][0]']
+
+ block5c_se_expand (Conv2D)     (None, 1, 1, 672)    19488       ['block5c_se_reduce[0][0]']
+
+ block5c_se_excite (Multiply)   (None, 14, 14, 672)  0           ['block5c_activation[0][0]',
+                                                                  'block5c_se_expand[0][0]']
+
+ block5c_project_conv (Conv2D)  (None, 14, 14, 112)  75264       ['block5c_se_excite[0][0]']
+
+ block5c_project_bn (BatchNorma  (None, 14, 14, 112)  448        ['block5c_project_conv[0][0]']
+ lization)
+
+ block5c_drop (Dropout)         (None, 14, 14, 112)  0           ['block5c_project_bn[0][0]']
+
+ block5c_add (Add)              (None, 14, 14, 112)  0           ['block5c_drop[0][0]',
+                                                                  'block5b_add[0][0]']
+
+ block6a_expand_conv (Conv2D)   (None, 14, 14, 672)  75264       ['block5c_add[0][0]']
+
+ block6a_expand_bn (BatchNormal  (None, 14, 14, 672)  2688       ['block6a_expand_conv[0][0]']
+ ization)
+
+ block6a_expand_activation (Act  (None, 14, 14, 672)  0          ['block6a_expand_bn[0][0]']
+ ivation)
+
+ block6a_dwconv_pad (ZeroPaddin  (None, 17, 17, 672)  0          ['block6a_expand_activation[0][0]
+ g2D)                                                            ']
+
+ block6a_dwconv (DepthwiseConv2  (None, 7, 7, 672)   16800       ['block6a_dwconv_pad[0][0]']
+ D)
+
+ block6a_bn (BatchNormalization  (None, 7, 7, 672)   2688        ['block6a_dwconv[0][0]']
+ )
+
+ block6a_activation (Activation  (None, 7, 7, 672)   0           ['block6a_bn[0][0]']
+ )
+
+ block6a_se_squeeze (GlobalAver  (None, 672)         0           ['block6a_activation[0][0]']
+ agePooling2D)
+
+ block6a_se_reshape (Reshape)   (None, 1, 1, 672)    0           ['block6a_se_squeeze[0][0]']
+
+ block6a_se_reduce (Conv2D)     (None, 1, 1, 28)     18844       ['block6a_se_reshape[0][0]']
+
+ block6a_se_expand (Conv2D)     (None, 1, 1, 672)    19488       ['block6a_se_reduce[0][0]']
+
+ block6a_se_excite (Multiply)   (None, 7, 7, 672)    0           ['block6a_activation[0][0]',
+                                                                  'block6a_se_expand[0][0]']
+
+ block6a_project_conv (Conv2D)  (None, 7, 7, 192)    129024      ['block6a_se_excite[0][0]']
+
+ block6a_project_bn (BatchNorma  (None, 7, 7, 192)   768         ['block6a_project_conv[0][0]']
+ lization)
+
+ block6b_expand_conv (Conv2D)   (None, 7, 7, 1152)   221184      ['block6a_project_bn[0][0]']
+
+ block6b_expand_bn (BatchNormal  (None, 7, 7, 1152)  4608        ['block6b_expand_conv[0][0]']
+ ization)
+
+ block6b_expand_activation (Act  (None, 7, 7, 1152)  0           ['block6b_expand_bn[0][0]']
+ ivation)
+
+ block6b_dwconv (DepthwiseConv2  (None, 7, 7, 1152)  28800       ['block6b_expand_activation[0][0]
+ D)                                                              ']
+
+ block6b_bn (BatchNormalization  (None, 7, 7, 1152)  4608        ['block6b_dwconv[0][0]']
+ )
+
+ block6b_activation (Activation  (None, 7, 7, 1152)  0           ['block6b_bn[0][0]']
+ )
+
+ block6b_se_squeeze (GlobalAver  (None, 1152)        0           ['block6b_activation[0][0]']
+ agePooling2D)
+
+ block6b_se_reshape (Reshape)   (None, 1, 1, 1152)   0           ['block6b_se_squeeze[0][0]']
+
+ block6b_se_reduce (Conv2D)     (None, 1, 1, 48)     55344       ['block6b_se_reshape[0][0]']
+
+ block6b_se_expand (Conv2D)     (None, 1, 1, 1152)   56448       ['block6b_se_reduce[0][0]']
+
+ block6b_se_excite (Multiply)   (None, 7, 7, 1152)   0           ['block6b_activation[0][0]',
+                                                                  'block6b_se_expand[0][0]']
+
+ block6b_project_conv (Conv2D)  (None, 7, 7, 192)    221184      ['block6b_se_excite[0][0]']
+
+ block6b_project_bn (BatchNorma  (None, 7, 7, 192)   768         ['block6b_project_conv[0][0]']
+ lization)
+
+ block6b_drop (Dropout)         (None, 7, 7, 192)    0           ['block6b_project_bn[0][0]']
+
+ block6b_add (Add)              (None, 7, 7, 192)    0           ['block6b_drop[0][0]',
+                                                                  'block6a_project_bn[0][0]']
+
+ block6c_expand_conv (Conv2D)   (None, 7, 7, 1152)   221184      ['block6b_add[0][0]']
+
+ block6c_expand_bn (BatchNormal  (None, 7, 7, 1152)  4608        ['block6c_expand_conv[0][0]']
+ ization)
+
+ block6c_expand_activation (Act  (None, 7, 7, 1152)  0           ['block6c_expand_bn[0][0]']
+ ivation)
+
+ block6c_dwconv (DepthwiseConv2  (None, 7, 7, 1152)  28800       ['block6c_expand_activation[0][0]
+ D)                                                              ']
+
+ block6c_bn (BatchNormalization  (None, 7, 7, 1152)  4608        ['block6c_dwconv[0][0]']
+ )
+
+ block6c_activation (Activation  (None, 7, 7, 1152)  0           ['block6c_bn[0][0]']
+ )
+
+ block6c_se_squeeze (GlobalAver  (None, 1152)        0           ['block6c_activation[0][0]']
+ agePooling2D)
+
+ block6c_se_reshape (Reshape)   (None, 1, 1, 1152)   0           ['block6c_se_squeeze[0][0]']
+
+ block6c_se_reduce (Conv2D)     (None, 1, 1, 48)     55344       ['block6c_se_reshape[0][0]']
+
+ block6c_se_expand (Conv2D)     (None, 1, 1, 1152)   56448       ['block6c_se_reduce[0][0]']
+
+ block6c_se_excite (Multiply)   (None, 7, 7, 1152)   0           ['block6c_activation[0][0]',
+                                                                  'block6c_se_expand[0][0]']
+
+ block6c_project_conv (Conv2D)  (None, 7, 7, 192)    221184      ['block6c_se_excite[0][0]']
+
+ block6c_project_bn (BatchNorma  (None, 7, 7, 192)   768         ['block6c_project_conv[0][0]']
+ lization)
+
+ block6c_drop (Dropout)         (None, 7, 7, 192)    0           ['block6c_project_bn[0][0]']
+
+ block6c_add (Add)              (None, 7, 7, 192)    0           ['block6c_drop[0][0]',
+                                                                  'block6b_add[0][0]']
+
+ block6d_expand_conv (Conv2D)   (None, 7, 7, 1152)   221184      ['block6c_add[0][0]']
+
+ block6d_expand_bn (BatchNormal  (None, 7, 7, 1152)  4608        ['block6d_expand_conv[0][0]']
+ ization)
+
+ block6d_expand_activation (Act  (None, 7, 7, 1152)  0           ['block6d_expand_bn[0][0]']
+ ivation)
+
+ block6d_dwconv (DepthwiseConv2  (None, 7, 7, 1152)  28800       ['block6d_expand_activation[0][0]
+ D)                                                              ']
+
+ block6d_bn (BatchNormalization  (None, 7, 7, 1152)  4608        ['block6d_dwconv[0][0]']
+ )
+
+ block6d_activation (Activation  (None, 7, 7, 1152)  0           ['block6d_bn[0][0]']
+ )
+
+ block6d_se_squeeze (GlobalAver  (None, 1152)        0           ['block6d_activation[0][0]']
+ agePooling2D)
+
+ block6d_se_reshape (Reshape)   (None, 1, 1, 1152)   0           ['block6d_se_squeeze[0][0]']
+
+ block6d_se_reduce (Conv2D)     (None, 1, 1, 48)     55344       ['block6d_se_reshape[0][0]']
+
+ block6d_se_expand (Conv2D)     (None, 1, 1, 1152)   56448       ['block6d_se_reduce[0][0]']
+
+ block6d_se_excite (Multiply)   (None, 7, 7, 1152)   0           ['block6d_activation[0][0]',
+                                                                  'block6d_se_expand[0][0]']
+
+ block6d_project_conv (Conv2D)  (None, 7, 7, 192)    221184      ['block6d_se_excite[0][0]']
+
+ block6d_project_bn (BatchNorma  (None, 7, 7, 192)   768         ['block6d_project_conv[0][0]']
+ lization)
+
+ block6d_drop (Dropout)         (None, 7, 7, 192)    0           ['block6d_project_bn[0][0]']
+
+ block6d_add (Add)              (None, 7, 7, 192)    0           ['block6d_drop[0][0]',
+                                                                  'block6c_add[0][0]']
+
+ block7a_expand_conv (Conv2D)   (None, 7, 7, 1152)   221184      ['block6d_add[0][0]']
+
+ block7a_expand_bn (BatchNormal  (None, 7, 7, 1152)  4608        ['block7a_expand_conv[0][0]']
+ ization)
+
+ block7a_expand_activation (Act  (None, 7, 7, 1152)  0           ['block7a_expand_bn[0][0]']
+ ivation)
+
+ block7a_dwconv (DepthwiseConv2  (None, 7, 7, 1152)  10368       ['block7a_expand_activation[0][0]
+ D)                                                              ']
+
+ block7a_bn (BatchNormalization  (None, 7, 7, 1152)  4608        ['block7a_dwconv[0][0]']
+ )
+
+ block7a_activation (Activation  (None, 7, 7, 1152)  0           ['block7a_bn[0][0]']
+ )
+
+ block7a_se_squeeze (GlobalAver  (None, 1152)        0           ['block7a_activation[0][0]']
+ agePooling2D)
+
+ block7a_se_reshape (Reshape)   (None, 1, 1, 1152)   0           ['block7a_se_squeeze[0][0]']
+
+ block7a_se_reduce (Conv2D)     (None, 1, 1, 48)     55344       ['block7a_se_reshape[0][0]']
+
+ block7a_se_expand (Conv2D)     (None, 1, 1, 1152)   56448       ['block7a_se_reduce[0][0]']
+
+ block7a_se_excite (Multiply)   (None, 7, 7, 1152)   0           ['block7a_activation[0][0]',
+                                                                  'block7a_se_expand[0][0]']
+
+ block7a_project_conv (Conv2D)  (None, 7, 7, 320)    368640      ['block7a_se_excite[0][0]']
+
+ block7a_project_bn (BatchNorma  (None, 7, 7, 320)   1280        ['block7a_project_conv[0][0]']
+ lization)
+
+ top_conv (Conv2D)              (None, 7, 7, 1280)   409600      ['block7a_project_bn[0][0]']
+
+ top_bn (BatchNormalization)    (None, 7, 7, 1280)   5120        ['top_conv[0][0]']
+
+ top_activation (Activation)    (None, 7, 7, 1280)   0           ['top_bn[0][0]']
+
+ conv2d (Conv2D)                (None, 7, 7, 128)    1474688     ['top_activation[0][0]']
+
+ max_pooling2d (MaxPooling2D)   (None, 3, 3, 128)    0           ['conv2d[0][0]']
+
+ batch_normalization (BatchNorm  (None, 3, 3, 128)   512         ['max_pooling2d[0][0]']
+ alization)
+
+ conv2d_1 (Conv2D)              (None, 3, 3, 128)    147584      ['batch_normalization[0][0]']
+
+ max_pooling2d_1 (MaxPooling2D)  (None, 1, 1, 128)   0           ['conv2d_1[0][0]']
+
+ batch_normalization_1 (BatchNo  (None, 1, 1, 128)   512         ['max_pooling2d_1[0][0]']
+ rmalization)
+
+ flatten (Flatten)              (None, 128)          0           ['batch_normalization_1[0][0]']
+
+ dense (Dense)                  (None, 512)          66048       ['flatten[0][0]']
+
+ batch_normalization_2 (BatchNo  (None, 512)         2048        ['dense[0][0]']
+ rmalization)
+
+ dropout (Dropout)              (None, 512)          0           ['batch_normalization_2[0][0]']
+
+ dense_1 (Dense)                (None, 256)          131328      ['dropout[0][0]']
+
+ batch_normalization_3 (BatchNo  (None, 256)         1024        ['dense_1[0][0]']
+ rmalization)
+
+ dropout_1 (Dropout)            (None, 256)          0           ['batch_normalization_3[0][0]']
+
+ dense_2 (Dense)                (None, 128)          32896       ['dropout_1[0][0]']
+
+ batch_normalization_4 (BatchNo  (None, 128)         512         ['dense_2[0][0]']
+ rmalization)
+
+ dropout_2 (Dropout)            (None, 128)          0           ['batch_normalization_4[0][0]']
+
+ dense_3 (Dense)                (None, 9)            1161        ['dropout_2[0][0]']
+
+==================================================================================================
+Total params: 5,907,884
+Trainable params: 5,863,557
+Non-trainable params: 44,327
+__________________________________________________________________________________________________
+Epoch 1/100
+2025-04-04 06:07:40.914030: I tensorflow/stream_executor/cuda/cuda_dnn.cc:384] Loaded cuDNN version 8907
+2025-04-04 06:07:42.210708: I tensorflow/stream_executor/cuda/cuda_blas.cc:1786] TensorFloat-32 will be used for the matrix multiplication. This will only be logged once.
+ 16/369 [>.............................] - ETA: 1:53 - loss: 3.4591 - accuracy: 0.2012C:\Program Files\Python310\lib\site-packages\PIL\Image.py:1045: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+369/369 [==============================] - ETA: 0s - loss: 1.7329 - accuracy: 0.7003
+Epoch 1: val_loss improved from inf to 1.25243, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 156s 397ms/step - loss: 1.7329 - accuracy: 0.7003 - val_loss: 1.2524 - val_accuracy: 0.8329 - lr: 0.0010
+Epoch 2/100
+369/369 [==============================] - ETA: 0s - loss: 1.1680 - accuracy: 0.8562
+Epoch 2: val_loss improved from 1.25243 to 1.00188, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 146s 396ms/step - loss: 1.1680 - accuracy: 0.8562 - val_loss: 1.0019 - val_accuracy: 0.8787 - lr: 0.0010
+Epoch 3/100
+369/369 [==============================] - ETA: 0s - loss: 0.9915 - accuracy: 0.8792
+Epoch 3: val_loss did not improve from 1.00188
+369/369 [==============================] - 146s 395ms/step - loss: 0.9915 - accuracy: 0.8792 - val_loss: 1.0231 - val_accuracy: 0.8393 - lr: 0.0010
+Epoch 4/100
+369/369 [==============================] - ETA: 0s - loss: 0.8312 - accuracy: 0.8964
+Epoch 4: val_loss improved from 1.00188 to 0.88221, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 147s 396ms/step - loss: 0.8312 - accuracy: 0.8964 - val_loss: 0.8822 - val_accuracy: 0.8587 - lr: 0.0010
+Epoch 5/100
+369/369 [==============================] - ETA: 0s - loss: 0.7368 - accuracy: 0.8976
+Epoch 5: val_loss improved from 0.88221 to 0.67042, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 147s 398ms/step - loss: 0.7368 - accuracy: 0.8976 - val_loss: 0.6704 - val_accuracy: 0.9001 - lr: 0.0010
+Epoch 6/100
+369/369 [==============================] - ETA: 0s - loss: 0.6413 - accuracy: 0.9060
+Epoch 6: val_loss improved from 0.67042 to 0.63347, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 146s 395ms/step - loss: 0.6413 - accuracy: 0.9060 - val_loss: 0.6335 - val_accuracy: 0.8903 - lr: 0.0010
+Epoch 7/100
+369/369 [==============================] - ETA: 0s - loss: 0.5756 - accuracy: 0.9077
+Epoch 7: val_loss did not improve from 0.63347
+369/369 [==============================] - 147s 397ms/step - loss: 0.5756 - accuracy: 0.9077 - val_loss: 0.7875 - val_accuracy: 0.8475 - lr: 0.0010
+Epoch 8/100
+369/369 [==============================] - ETA: 0s - loss: 0.5351 - accuracy: 0.9073
+Epoch 8: val_loss improved from 0.63347 to 0.53708, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 147s 398ms/step - loss: 0.5351 - accuracy: 0.9073 - val_loss: 0.5371 - val_accuracy: 0.8964 - lr: 0.0010
+Epoch 9/100
+369/369 [==============================] - ETA: 0s - loss: 0.4893 - accuracy: 0.9082
+Epoch 9: val_loss improved from 0.53708 to 0.46518, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 147s 397ms/step - loss: 0.4893 - accuracy: 0.9082 - val_loss: 0.4652 - val_accuracy: 0.9001 - lr: 0.0010
+Epoch 10/100
+369/369 [==============================] - ETA: 0s - loss: 0.4580 - accuracy: 0.9136
+Epoch 10: val_loss did not improve from 0.46518
+369/369 [==============================] - 147s 397ms/step - loss: 0.4580 - accuracy: 0.9136 - val_loss: 0.5361 - val_accuracy: 0.8849 - lr: 0.0010
+Epoch 11/100
+369/369 [==============================] - ETA: 0s - loss: 0.4329 - accuracy: 0.9164
+Epoch 11: val_loss did not improve from 0.46518
+369/369 [==============================] - 147s 397ms/step - loss: 0.4329 - accuracy: 0.9164 - val_loss: 0.5574 - val_accuracy: 0.8689 - lr: 0.0010
+Epoch 12/100
+369/369 [==============================] - ETA: 0s - loss: 0.4001 - accuracy: 0.9203
+Epoch 12: val_loss did not improve from 0.46518
+
+Epoch 12: ReduceLROnPlateau reducing learning rate to 0.00010000000474974513.
+369/369 [==============================] - 147s 397ms/step - loss: 0.4001 - accuracy: 0.9203 - val_loss: 0.6576 - val_accuracy: 0.8471 - lr: 0.0010
+Epoch 13/100
+369/369 [==============================] - ETA: 0s - loss: 0.2934 - accuracy: 0.9478
+Epoch 13: val_loss improved from 0.46518 to 0.27724, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 399ms/step - loss: 0.2934 - accuracy: 0.9478 - val_loss: 0.2772 - val_accuracy: 0.9460 - lr: 1.0000e-04
+Epoch 14/100
+369/369 [==============================] - ETA: 0s - loss: 0.2247 - accuracy: 0.9641
+Epoch 14: val_loss improved from 0.27724 to 0.26576, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 400ms/step - loss: 0.2247 - accuracy: 0.9641 - val_loss: 0.2658 - val_accuracy: 0.9501 - lr: 1.0000e-04
+Epoch 15/100
+369/369 [==============================] - ETA: 0s - loss: 0.1845 - accuracy: 0.9739
+Epoch 15: val_loss improved from 0.26576 to 0.25418, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 399ms/step - loss: 0.1845 - accuracy: 0.9739 - val_loss: 0.2542 - val_accuracy: 0.9524 - lr: 1.0000e-04
+Epoch 16/100
+369/369 [==============================] - ETA: 0s - loss: 0.1702 - accuracy: 0.9774
+Epoch 16: val_loss improved from 0.25418 to 0.25107, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 401ms/step - loss: 0.1702 - accuracy: 0.9774 - val_loss: 0.2511 - val_accuracy: 0.9518 - lr: 1.0000e-04
+Epoch 17/100
+369/369 [==============================] - ETA: 0s - loss: 0.1521 - accuracy: 0.9796
+Epoch 17: val_loss did not improve from 0.25107
+369/369 [==============================] - 147s 398ms/step - loss: 0.1521 - accuracy: 0.9796 - val_loss: 0.2530 - val_accuracy: 0.9552 - lr: 1.0000e-04
+Epoch 18/100
+369/369 [==============================] - ETA: 0s - loss: 0.1375 - accuracy: 0.9813
+Epoch 18: val_loss improved from 0.25107 to 0.22303, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 400ms/step - loss: 0.1375 - accuracy: 0.9813 - val_loss: 0.2230 - val_accuracy: 0.9620 - lr: 1.0000e-04
+Epoch 19/100
+369/369 [==============================] - ETA: 0s - loss: 0.1275 - accuracy: 0.9821
+Epoch 19: val_loss did not improve from 0.22303
+369/369 [==============================] - 147s 398ms/step - loss: 0.1275 - accuracy: 0.9821 - val_loss: 0.2328 - val_accuracy: 0.9562 - lr: 1.0000e-04
+Epoch 20/100
+369/369 [==============================] - ETA: 0s - loss: 0.1081 - accuracy: 0.9862
+Epoch 20: val_loss did not improve from 0.22303
+369/369 [==============================] - 148s 399ms/step - loss: 0.1081 - accuracy: 0.9862 - val_loss: 0.2448 - val_accuracy: 0.9538 - lr: 1.0000e-04
+Epoch 21/100
+369/369 [==============================] - ETA: 0s - loss: 0.1096 - accuracy: 0.9851
+Epoch 21: val_loss improved from 0.22303 to 0.20791, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 400ms/step - loss: 0.1096 - accuracy: 0.9851 - val_loss: 0.2079 - val_accuracy: 0.9606 - lr: 1.0000e-04
+Epoch 22/100
+369/369 [==============================] - ETA: 0s - loss: 0.1037 - accuracy: 0.9859
+Epoch 22: val_loss did not improve from 0.20791
+369/369 [==============================] - 147s 398ms/step - loss: 0.1037 - accuracy: 0.9859 - val_loss: 0.2375 - val_accuracy: 0.9538 - lr: 1.0000e-04
+Epoch 23/100
+369/369 [==============================] - ETA: 0s - loss: 0.0929 - accuracy: 0.9867
+Epoch 23: val_loss did not improve from 0.20791
+369/369 [==============================] - 148s 399ms/step - loss: 0.0929 - accuracy: 0.9867 - val_loss: 0.2522 - val_accuracy: 0.9521 - lr: 1.0000e-04
+Epoch 24/100
+369/369 [==============================] - ETA: 0s - loss: 0.0904 - accuracy: 0.9886
+Epoch 24: val_loss did not improve from 0.20791
+
+Epoch 24: ReduceLROnPlateau reducing learning rate to 1.0000000474974514e-05.
+369/369 [==============================] - 148s 399ms/step - loss: 0.0904 - accuracy: 0.9886 - val_loss: 0.2192 - val_accuracy: 0.9565 - lr: 1.0000e-04
+Epoch 25/100
+369/369 [==============================] - ETA: 0s - loss: 0.0791 - accuracy: 0.9904
+Epoch 25: val_loss did not improve from 0.20791
+369/369 [==============================] - 147s 398ms/step - loss: 0.0791 - accuracy: 0.9904 - val_loss: 0.2239 - val_accuracy: 0.9609 - lr: 1.0000e-05
+Epoch 26/100
+369/369 [==============================] - ETA: 0s - loss: 0.0707 - accuracy: 0.9914
+Epoch 26: val_loss did not improve from 0.20791
+369/369 [==============================] - 148s 400ms/step - loss: 0.0707 - accuracy: 0.9914 - val_loss: 0.2297 - val_accuracy: 0.9599 - lr: 1.0000e-05
+Epoch 27/100
+369/369 [==============================] - ETA: 0s - loss: 0.0721 - accuracy: 0.9916
+Epoch 27: val_loss did not improve from 0.20791
+
+Epoch 27: ReduceLROnPlateau reducing learning rate to 1.0000000656873453e-06.
+369/369 [==============================] - 147s 398ms/step - loss: 0.0721 - accuracy: 0.9916 - val_loss: 0.2191 - val_accuracy: 0.9603 - lr: 1.0000e-05
+Epoch 28/100
+369/369 [==============================] - ETA: 0s - loss: 0.0718 - accuracy: 0.9913
+Epoch 28: val_loss improved from 0.20791 to 0.20270, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 401ms/step - loss: 0.0718 - accuracy: 0.9913 - val_loss: 0.2027 - val_accuracy: 0.9609 - lr: 1.0000e-06
+Epoch 29/100
+369/369 [==============================] - ETA: 0s - loss: 0.0712 - accuracy: 0.9908
+Epoch 29: val_loss did not improve from 0.20270
+369/369 [==============================] - 147s 398ms/step - loss: 0.0712 - accuracy: 0.9908 - val_loss: 0.2047 - val_accuracy: 0.9613 - lr: 1.0000e-06
+Epoch 30/100
+369/369 [==============================] - ETA: 0s - loss: 0.0715 - accuracy: 0.9914
+Epoch 30: val_loss did not improve from 0.20270
+369/369 [==============================] - 147s 398ms/step - loss: 0.0715 - accuracy: 0.9914 - val_loss: 0.2076 - val_accuracy: 0.9640 - lr: 1.0000e-06
+Epoch 31/100
+369/369 [==============================] - ETA: 0s - loss: 0.0709 - accuracy: 0.9914
+Epoch 31: val_loss improved from 0.20270 to 0.20143, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 400ms/step - loss: 0.0709 - accuracy: 0.9914 - val_loss: 0.2014 - val_accuracy: 0.9626 - lr: 1.0000e-06
+Epoch 32/100
+369/369 [==============================] - ETA: 0s - loss: 0.0698 - accuracy: 0.9924
+Epoch 32: val_loss did not improve from 0.20143
+369/369 [==============================] - 147s 399ms/step - loss: 0.0698 - accuracy: 0.9924 - val_loss: 0.2082 - val_accuracy: 0.9637 - lr: 1.0000e-06
+Epoch 33/100
+369/369 [==============================] - ETA: 0s - loss: 0.0719 - accuracy: 0.9924
+Epoch 33: val_loss did not improve from 0.20143
+369/369 [==============================] - 148s 399ms/step - loss: 0.0719 - accuracy: 0.9924 - val_loss: 0.2088 - val_accuracy: 0.9616 - lr: 1.0000e-06
+Epoch 34/100
+369/369 [==============================] - ETA: 0s - loss: 0.0713 - accuracy: 0.9919
+Epoch 34: val_loss did not improve from 0.20143
+
+Epoch 34: ReduceLROnPlateau reducing learning rate to 1.0000001111620805e-07.
+369/369 [==============================] - 147s 399ms/step - loss: 0.0713 - accuracy: 0.9919 - val_loss: 0.2041 - val_accuracy: 0.9599 - lr: 1.0000e-06
+Epoch 35/100
+369/369 [==============================] - ETA: 0s - loss: 0.0681 - accuracy: 0.9919
+Epoch 35: val_loss did not improve from 0.20143
+369/369 [==============================] - 148s 399ms/step - loss: 0.0681 - accuracy: 0.9919 - val_loss: 0.2066 - val_accuracy: 0.9582 - lr: 1.0000e-07
+Epoch 36/100
+369/369 [==============================] - ETA: 0s - loss: 0.0704 - accuracy: 0.9912
+Epoch 36: val_loss did not improve from 0.20143
+369/369 [==============================] - 150s 405ms/step - loss: 0.0704 - accuracy: 0.9912 - val_loss: 0.2016 - val_accuracy: 0.9643 - lr: 1.0000e-07
+Epoch 37/100
+369/369 [==============================] - ETA: 0s - loss: 0.0695 - accuracy: 0.9925
+Epoch 37: val_loss did not improve from 0.20143
+
+Epoch 37: ReduceLROnPlateau reducing learning rate to 1e-07.
+369/369 [==============================] - 147s 398ms/step - loss: 0.0695 - accuracy: 0.9925 - val_loss: 0.2187 - val_accuracy: 0.9620 - lr: 1.0000e-07
+Epoch 38/100
+369/369 [==============================] - ETA: 0s - loss: 0.0676 - accuracy: 0.9914
+Epoch 38: val_loss improved from 0.20143 to 0.19984, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 150s 406ms/step - loss: 0.0676 - accuracy: 0.9914 - val_loss: 0.1998 - val_accuracy: 0.9620 - lr: 1.0000e-07
+Epoch 39/100
+369/369 [==============================] - ETA: 0s - loss: 0.0684 - accuracy: 0.9919
+Epoch 39: val_loss did not improve from 0.19984
+369/369 [==============================] - 151s 409ms/step - loss: 0.0684 - accuracy: 0.9919 - val_loss: 0.2088 - val_accuracy: 0.9623 - lr: 1.0000e-07
+Epoch 40/100
+369/369 [==============================] - ETA: 0s - loss: 0.0749 - accuracy: 0.9909
+Epoch 40: val_loss did not improve from 0.19984
+369/369 [==============================] - 149s 402ms/step - loss: 0.0749 - accuracy: 0.9909 - val_loss: 0.2172 - val_accuracy: 0.9596 - lr: 1.0000e-07
+Epoch 41/100
+369/369 [==============================] - ETA: 0s - loss: 0.0691 - accuracy: 0.9922
+Epoch 41: val_loss did not improve from 0.19984
+369/369 [==============================] - 147s 398ms/step - loss: 0.0691 - accuracy: 0.9922 - val_loss: 0.2030 - val_accuracy: 0.9626 - lr: 1.0000e-07
+Epoch 42/100
+369/369 [==============================] - ETA: 0s - loss: 0.0738 - accuracy: 0.9899
+Epoch 42: val_loss improved from 0.19984 to 0.19973, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 148s 401ms/step - loss: 0.0738 - accuracy: 0.9899 - val_loss: 0.1997 - val_accuracy: 0.9671 - lr: 1.0000e-07
+Epoch 43/100
+369/369 [==============================] - ETA: 0s - loss: 0.0710 - accuracy: 0.9919
+Epoch 43: val_loss did not improve from 0.19973
+369/369 [==============================] - 148s 399ms/step - loss: 0.0710 - accuracy: 0.9919 - val_loss: 0.2100 - val_accuracy: 0.9620 - lr: 1.0000e-07
+Epoch 44/100
+369/369 [==============================] - ETA: 0s - loss: 0.0682 - accuracy: 0.9925
+Epoch 44: val_loss did not improve from 0.19973
+369/369 [==============================] - 148s 399ms/step - loss: 0.0682 - accuracy: 0.9925 - val_loss: 0.2164 - val_accuracy: 0.9603 - lr: 1.0000e-07
+Epoch 45/100
+369/369 [==============================] - ETA: 0s - loss: 0.0730 - accuracy: 0.9909
+Epoch 45: val_loss did not improve from 0.19973
+369/369 [==============================] - 147s 397ms/step - loss: 0.0730 - accuracy: 0.9909 - val_loss: 0.2222 - val_accuracy: 0.9599 - lr: 1.0000e-07
+Epoch 46/100
+369/369 [==============================] - ETA: 0s - loss: 0.0696 - accuracy: 0.9918
+Epoch 46: val_loss did not improve from 0.19973
+369/369 [==============================] - 147s 398ms/step - loss: 0.0696 - accuracy: 0.9918 - val_loss: 0.2138 - val_accuracy: 0.9633 - lr: 1.0000e-07
+Epoch 47/100
+369/369 [==============================] - ETA: 0s - loss: 0.0696 - accuracy: 0.9918
+Epoch 47: val_loss improved from 0.19973 to 0.19563, saving model to efficientnet_saved_2025-04-04_06-07-28.keras
+369/369 [==============================] - 147s 399ms/step - loss: 0.0696 - accuracy: 0.9918 - val_loss: 0.1956 - val_accuracy: 0.9654 - lr: 1.0000e-07
+Epoch 48/100
+369/369 [==============================] - ETA: 0s - loss: 0.0698 - accuracy: 0.9916
+Epoch 48: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0698 - accuracy: 0.9916 - val_loss: 0.2240 - val_accuracy: 0.9603 - lr: 1.0000e-07
+Epoch 49/100
+369/369 [==============================] - ETA: 0s - loss: 0.0657 - accuracy: 0.9932
+Epoch 49: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 398ms/step - loss: 0.0657 - accuracy: 0.9932 - val_loss: 0.2188 - val_accuracy: 0.9589 - lr: 1.0000e-07
+Epoch 50/100
+369/369 [==============================] - ETA: 0s - loss: 0.0726 - accuracy: 0.9913
+Epoch 50: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 398ms/step - loss: 0.0726 - accuracy: 0.9913 - val_loss: 0.2042 - val_accuracy: 0.9620 - lr: 1.0000e-07
+Epoch 51/100
+369/369 [==============================] - ETA: 0s - loss: 0.0720 - accuracy: 0.9909
+Epoch 51: val_loss did not improve from 0.19563
+369/369 [==============================] - 148s 400ms/step - loss: 0.0720 - accuracy: 0.9909 - val_loss: 0.2096 - val_accuracy: 0.9657 - lr: 1.0000e-07
+Epoch 52/100
+369/369 [==============================] - ETA: 0s - loss: 0.0730 - accuracy: 0.9903
+Epoch 52: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 398ms/step - loss: 0.0730 - accuracy: 0.9903 - val_loss: 0.2257 - val_accuracy: 0.9582 - lr: 1.0000e-07
+Epoch 53/100
+369/369 [==============================] - ETA: 0s - loss: 0.0689 - accuracy: 0.9918
+Epoch 53: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0689 - accuracy: 0.9918 - val_loss: 0.2185 - val_accuracy: 0.9586 - lr: 1.0000e-07
+Epoch 54/100
+369/369 [==============================] - ETA: 0s - loss: 0.0734 - accuracy: 0.9908
+Epoch 54: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0734 - accuracy: 0.9908 - val_loss: 0.2151 - val_accuracy: 0.9609 - lr: 1.0000e-07
+Epoch 55/100
+369/369 [==============================] - ETA: 0s - loss: 0.0731 - accuracy: 0.9911
+Epoch 55: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0731 - accuracy: 0.9911 - val_loss: 0.1966 - val_accuracy: 0.9640 - lr: 1.0000e-07
+Epoch 56/100
+369/369 [==============================] - ETA: 0s - loss: 0.0701 - accuracy: 0.9925
+Epoch 56: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0701 - accuracy: 0.9925 - val_loss: 0.2149 - val_accuracy: 0.9603 - lr: 1.0000e-07
+Epoch 57/100
+369/369 [==============================] - ETA: 0s - loss: 0.0688 - accuracy: 0.9915
+Epoch 57: val_loss did not improve from 0.19563
+369/369 [==============================] - 147s 397ms/step - loss: 0.0688 - accuracy: 0.9915 - val_loss: 0.2201 - val_accuracy: 0.9620 - lr: 1.0000e-07
+Test Accuracy: 0.9698
+115/115 [==============================] - 10s 79ms/step
+Classification Report:
+              precision    recall  f1-score   support
+
+     battery       0.97      0.97      0.97       260
+   cardboard       0.98      0.93      0.96       278
+     clothes       0.99      1.00      0.99      1006
+       glass       0.96      0.93      0.94       401
+       metal       0.93      0.96      0.94       272
+     organic       0.99      0.99      0.99       363
+       paper       0.93      0.97      0.95       309
+     plastic       0.94      0.95      0.94       396
+       shoes       0.98      0.99      0.99       395
+
+    accuracy                           0.97      3680
+   macro avg       0.96      0.96      0.96      3680
+weighted avg       0.97      0.97      0.97      3680
+
+Confusion Matrix: [[ 252    2    0    0    2    0    2    2    0]
+ [   2  259    2    0    2    0    9    3    1]
+ [   0    0 1002    0    0    0    4    0    0]
+ [   0    1    0  373   10    3    1   13    0]
+ [   4    0    1    2  260    0    1    2    2]
+ [   0    0    1    1    0  358    0    0    3]
+ [   1    2    0    1    2    0  300    3    0]
+ [   1    0    1   12    3    0    4  375    0]
+ [   0    0    2    0    1    0    1    1  390]]
+
+Process finished with exit code 0
+
