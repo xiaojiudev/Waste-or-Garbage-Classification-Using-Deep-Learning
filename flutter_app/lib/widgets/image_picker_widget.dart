@@ -21,13 +21,34 @@ class ImagePickerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ElevatedButton(
+        ElevatedButton.icon(
           onPressed: () => _pickImage(ImageSource.camera),
-          child: Text('Take a photo'),
+          icon: const Icon(Icons.camera_alt),
+          label: const Text('Take a Photo'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[500], // Màu nền nút
+            foregroundColor: Colors.white, // Màu chữ/icon
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            textStyle: const TextStyle(fontSize: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12), // Bo góc nút
+            ),
+          ),
         ),
-        ElevatedButton(
+		const SizedBox(height: 20),
+        ElevatedButton.icon(
           onPressed: () => _pickImage(ImageSource.gallery),
-          child: Text('Select from gallery'),
+          icon: const Icon(Icons.photo_library),
+          label: const Text('Select from Gallery'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[600],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            textStyle: const TextStyle(fontSize: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         ),
       ],
     );

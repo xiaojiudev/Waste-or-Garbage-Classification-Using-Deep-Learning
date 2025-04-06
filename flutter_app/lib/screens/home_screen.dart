@@ -27,42 +27,74 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('ImagePicked Error: ${e}')));
-	  print(e);
+      print(e);
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
   void _handleUrlSubmitted(String url) async {
-	setState(() => _isLoading = true);
-	try {
-	  final result = await _apiService.classifyImageUrl(url);
-	  Navigator.push(context, MaterialPageRoute(builder: (context) => ResultScreen(result: result)));
-	} catch (e) {
-	  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('UrlSubmitted Error: ${e}')));
-	  print(e);
-	} finally {
-		setState(() => _isLoading = false);
-	}
+    setState(() => _isLoading = true);
+    try {
+      final result = await _apiService.classifyImageUrl(url);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ResultScreen(result: result)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('UrlSubmitted Error: ${e}')));
+      print(e);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-		appBar: AppBar(title: Text('Waste Classification')),
-		body: Center(
-			child: _isLoading 
-			? CircularProgressIndicator()
-			: Column(
-				mainAxisAlignment: MainAxisAlignment.center,
-				children: [
-					ImagePickerWidget(onImagePicked: _handleImagePicked,),
-					SizedBox(height: 20,),
-					UrlInputWidget(onUrlSubmitted: _handleUrlSubmitted,),
-				],
-			),
-		),
-
-	);
+      appBar: AppBar(
+        title: Text('Waste Classification'),
+        backgroundColor: Colors.green[700],
+        elevation: 4,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green[50]!, Colors.white],
+          ),
+        ),
+        child: Center(
+          child:
+              _isLoading
+                  ? CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  )
+                  : Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Model: EfficientNet-B0',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+						const SizedBox(height: 40),
+                        ImagePickerWidget(onImagePicked: _handleImagePicked),
+                        SizedBox(height: 25),
+                        UrlInputWidget(onUrlSubmitted: _handleUrlSubmitted),
+                      ],
+                    ),
+                  ),
+        ),
+      ),
+    );
   }
 }
