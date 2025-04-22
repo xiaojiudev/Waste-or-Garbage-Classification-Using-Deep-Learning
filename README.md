@@ -185,16 +185,18 @@ The models were evaluated on a test set of 3,680 images. Below are the performan
 ## 🗂️ Project Structure
 
 ```
+flutter_app/                    # Flutter app
 waste-classification/
-├── main.py                 # FastAPI backend
-├── my_dataset/            # Dataset directory
-│   ├── train/            # Training images
-│   └── test/             # Testing images
-├── logs/                  # Training logs
-├── screen_shot/           # Visualizations (e.g., confusion matrix)
-├── *_indices.json  # Class index mapping
-├── requirements.txt       # Python dependencies
-└── README.md              # Project documentation
+├── main.py                     # FastAPI backend
+├── MODEL_*.py                  # Our model (ResNet-50, EfficientNet-B0, MobileNet-V2)
+├── my_dataset/                 # Dataset directory
+│   ├── train/                  # Training images
+│   └── test/                   # Testing images
+├── logs/                       # Training logs
+├── screen_shot/                # Visualizations (e.g., confusion matrix)
+├── *_indices.json              # Class index mapping
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation
 ```
 
 ## 📜 License
